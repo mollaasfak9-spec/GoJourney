@@ -1,362 +1,128 @@
-# RideX GitHub Guide - Beginner to Professional Workflow
+# RideX GitHub Guide
 
-Team workflow: `develop` is the **default branch**. We build from `develop`, merge everything into `develop`, and only release to `main`.
+The team cheat sheet for Git and GitHub. Read the top section and you are done. Everything below is for when something goes wrong or you forgot a command.
 
-This document is the team's Git/GitHub cheat sheet.
+`develop` is the **default branch**. We build from `develop`, merge everything into `develop`, and release to `main` only when we want a stable demo.
 
-## TL;DR - Our Branch Model
+**Jump to:** [60-second version](#the-60-second-version) · [Branch model](#1-branch-model) · [Branch names](#2-branch-names) · [Commits](#3-commit-messages) · [Pull requests](#4-the-pull-request) · [Conflicts](#6-merge-conflicts) · [Command list](#9-command-cheat-sheet) · [Troubleshooting](#10-troubleshooting) · [Release to main](#11-release-to-main) · [Golden rules](#12-golden-rules)
 
-```text
-main      = stable / released code. Do not touch.
-develop   = the repo DEFAULT branch. All our merged work. We build from here.
-feature/* = your own branch for one task. PR -> develop.
-```
+---
 
-Daily loop:
+# The 60-second version
+
+Every task, start to finish. Copy this block.
 
 ```bash
 git checkout develop
 git pull origin develop
-git checkout -b feature/your-task
+git checkout -b feature/short-name
 
-# ... work, then:
+# ... write your code ...
+
+git status
 git add .
-git commit -m "feat: short description"
-git push -u origin feature/your-task
-
-# open PR: feature/your-task -> develop
+git commit -m "feat: what you actually did"
+git push -u origin feature/short-name
 ```
+
+Then on GitHub: open a Pull Request from `feature/short-name` into `develop` → get one approval → merge → delete the branch.
+
+That is the entire workflow. Everything else in this document is detail.
 
 ---
 
-# 1. One-Time Git Setup
+# 1. Branch model
 
-```bash
-git config --global user.name "Your Name"
-git config --global user.email "your@email.com"
-```
-
-Check:
-
-```bash
-git config --global --list
-```
-
----
-
-# 2. Clone the Project
-
-Do NOT create separate unrelated repositories if the team agreed on one monorepo.
-
-```bash
-git clone <REPOSITORY_URL>
-cd ridex
-```
-
----
-
-# 3. Understand Branches: `main` and `develop`
-
-We use two permanent branches, and `develop` is the repository **default branch**:
+We use exactly two permanent branches. No `release/*`, no `hotfix/*`.
 
 ```text
-main
- └── reviewed, working, stable (production)
-      │
-      └── develop
-           └── all merged team code lives here (our working branch)
+                        main   ← stable, demo-ready. Do not touch.
+                          ▲
+                          │  release PR (team lead only)
+                          │
+                      develop   ← DEFAULT branch. All merged work lives here.
+                       ▲   ▲   ▲
+        ┌──────────────┘   │   └──────────────┐
+        │                  │                  │
+ feature/frontend-   feature/backend-     fix/ride-status
+ login                 auth                 validation
+        └──────┬───────┴─────────┬──────────┘
+               │   Pull Request   │
+               │   + 1 approval   │
+               └────────┬────────┘
+                        │
+                     develop
 ```
 
-`main` should always represent code that is:
+| Branch | What it means | Who merges into it |
+| --- | --- | --- |
+| `develop` | Every completed feature, merged. Mostly works, may be rough. | Everyone, via PR |
+| `main` | Reviewed, working, demo-ready. Only moves for a release. | Team lead only, via PR |
+| `feature/*` `fix/*` `docs/*` | One person's one task. Lives for days, not months. | — |
 
-- reviewed
-- working
-- reasonably stable
-- released / demo-ready
+Merge rules:
 
-`develop` should always represent:
-
-- all completed features merged together
-- code that mostly works, but may still be unstable
-- the branch every teammate works from
-
-Rules:
-
-- Do NOT develop features on `main`.
-- Do NOT work directly on `develop` either. Feature branches come from `develop`.
-- All Pull Requests merge into `develop`.
-- `develop` is merged into `main` only when we want a stable release.
+```text
+feature/*, fix/*, docs/*  →  develop   (normal, frequent)
+develop                  →  main      (stable milestones only)
+```
 
 Because `develop` is the default branch:
 
-- opening the repo lands you on `develop`, not `main`
-- the "Code" button and `git clone` give you `develop`
-- new Pull Requests default to base `develop`
-- still confirm the base branch is `develop` before merging
+- opening the repo shows you `develop`, not `main`
+- the **Code** button and `git clone` give you `develop`
+- new Pull Requests already default to base `develop`
+- still check the base branch before you click Merge
 
-Full picture:
+### Getting the code for the first time
 
-```text
-  feature/frontend-login    --+
-  feature/backend-auth      -----+--> develop --(release PR)--> main
-  feature/frontend-booking --+       all merged code      stable
-      (PR + review)
+```bash
+git clone https://github.com/AKASHDAS7477/RideX_AXION.git
+cd RideX_AXION
+git config --global user.name  "Your Name"
+git config --global user.email "your@email.com"
 ```
+
+Your `user.name` and `user.email` are how GitHub knows which commits are yours. Set them once per machine. Check with `git config --global --list`.
 
 ---
 
-# 4. Get the Latest `develop`
+# 2. Branch names
 
-`develop` is your starting point. Before starting work:
+| Prefix | Use it for | Example |
+| --- | --- | --- |
+| `feature/frontend-` | New frontend work | `feature/frontend-login` |
+| `feature/backend-` | New backend work | `feature/backend-rides` |
+| `fix/` | A bug | `fix/ride-status-validation` |
+| `refactor/` | Restructuring, no new behaviour | `refactor/fare-service` |
+| `docs/` | Documentation only | `docs/api-documentation` |
+| `chore/` | Deps, config, cleanup | `chore/update-dependencies` |
 
-```bash
-git checkout develop
-git pull origin develop
-```
+Never use: `mybranch`, `test`, `new`, `final`, `final2`, `akashbranch`, `temp`.
 
-If `develop` does not exist yet on GitHub, see section 4.1.
+### One feature = one branch
 
----
-
-# 4.1 Create the `develop` Branch (One-Time Setup)
-
-Only the team lead does this, once.
-
-### Case A: repo already has commits (for example the default branch is `master`)
-
-Rename `master` to `main`, then create `develop` from it:
-
-```bash
-git branch -m master main        # rename current branch to main
-git checkout -b develop          # create develop from main
-git push -u origin main
-git push -u origin develop
-git checkout develop             # develop is where we work from now
-```
-
-Check it worked:
-
-```bash
-git branch -v
-```
-
-You should see `main` and `develop` on the same commit.
-
-### Case B: remote already has a `main` branch
-
-```bash
-git checkout main
-git pull origin main
-git checkout -b develop
-git push -u origin develop
-git checkout develop
-```
-
-If `main` does not exist on the remote yet, push it first:
-
-```bash
-git push -u origin main
-```
-
-On GitHub, protect `develop` and `main`:
-
-```text
-Settings → Branches → Add rule
-```
-
-Suggested protection:
-
-| Branch   | Require PR | Require review | Block direct push |
-| -------- | ---------- | -------------- | ----------------- |
-| `main`   | yes        | 1 approval     | yes              |
-| `develop`| yes        | 1 approval     | yes              |
-
-### Step 3: set `develop` as the default branch (required)
-
-```text
-GitHub → repo → Settings → Branches → Default branch → select develop → Update
-```
-
-Our default branch is `develop`. This means:
-
-- teammates land on `develop` when they open the repo
-- `git clone` checks out `develop`
-- new Pull Requests already target `develop`
-
-`main` stays protected and is only touched through a release PR from `develop`.
+A branch named `feature/akash` containing login + dashboard + payment + navbar + random fixes is unreviewable. Split it. Small PRs get approved fast; 400-line PRs sit for a week.
 
 ---
 
-# 5. Create Your Own Branch
+# 3. Commit messages
 
-Always branch from `develop`.
+Format: `type: short description in the imperative`.
 
-Frontend:
-
-```bash
-git checkout develop
-git pull origin develop
-git checkout -b feature/frontend-passenger-booking
-```
-
-Backend:
-
-```bash
-git checkout develop
-git pull origin develop
-git checkout -b feature/backend-auth
-```
-
-Bug:
-
-```bash
-git checkout develop
-git pull origin develop
-git checkout -b fix/login-validation
-```
-
-Documentation:
-
-```bash
-git checkout develop
-git pull origin develop
-git checkout -b docs/github-guide
-```
-
----
-
-# 6. Branch Naming Convention
-
-Recommended:
-
-```text
-feature/frontend-<feature>
-feature/backend-<feature>
-fix/<bug>
-refactor/<area>
-docs/<topic>
-chore/<task>
-```
-
-Examples:
-
-```text
-feature/frontend-login
-feature/frontend-driver-dashboard
-feature/backend-auth
-feature/backend-rides
-fix/ride-status-validation
-refactor/fare-service
-docs/api-documentation
-```
-
-Avoid:
-
-```text
-mybranch
-test
-new
-final
-final2
-akashbranch
-```
-
----
-
-# 7. Check Your Current Branch
-
-```bash
-git branch
-```
-
-The branch with `*` is your current branch.
-
----
-
-# 8. Check Changed Files
-
-```bash
-git status
-```
-
----
-
-# 9. Review Your Changes
-
-```bash
-git diff
-```
-
-Do this before committing.
-
----
-
-# 10. Stage Files
-
-All changes:
-
-```bash
-git add .
-```
-
-Better for important work:
-
-```bash
-git add src/routes/auth.routes.js
-```
-
-Then:
-
-```bash
-git status
-```
-
----
-
-# 11. Commit
-
-Use meaningful commits.
-
-Good:
-
-```bash
-git commit -m "feat: add user registration API"
-```
-
-```bash
-git commit -m "feat: add passenger booking page"
-```
-
-```bash
-git commit -m "fix: validate ride status transition"
-```
-
-Bad:
-
-```bash
-git commit -m "done"
-git commit -m "changes"
-git commit -m "final"
-```
-
----
-
-# 12. Recommended Commit Prefixes
-
-```text
-feat:
-fix:
-refactor:
-docs:
-style:
-test:
-chore:
-```
-
-Examples:
+| Prefix | Meaning |
+| --- | --- |
+| `feat:` | New feature |
+| `fix:` | Bug fix |
+| `refactor:` | Restructure, no behaviour change |
+| `docs:` | Documentation |
+| `style:` | Formatting only |
+| `test:` | Adding or fixing tests |
+| `chore:` | Deps, build, config |
 
 ```text
 feat: add driver login
+feat: add passenger ride booking
 fix: prevent duplicate ride acceptance
 refactor: move fare calculation into service
 docs: update ride API documentation
@@ -364,157 +130,148 @@ test: add auth controller tests
 chore: update dependencies
 ```
 
----
-
-# 13. Push Your Branch
-
-First push:
-
-```bash
-git push -u origin feature/backend-auth
-```
-
-After that:
-
-```bash
-git push
-```
-
----
-
-Never push straight to `develop` or `main` - branch protection will block you, and that is intentional.
-
----
-
-# 14. Create Pull Request
-
-On GitHub:
+Never commit these:
 
 ```text
-Your Branch (feature/*)
-     ↓
-Push
-     ↓
-Pull Request
-     ↓
-Code Review
-     ↓
-Fix requested changes
-     ↓
-Approval
-     ↓
-Merge into develop
+done
+changes
+final
+updated
+fixed stuff
 ```
 
-Do not merge unreviewed feature branches into `develop`.
+If your commit message needs a paragraph to explain, the commit is doing too much. Split it.
 
-When opening the PR, always confirm the base branch is `develop`, not `main`. GitHub pre-fills `develop` because it is the default branch, but check the dropdown anyway.
+```bash
+git add .                             # stage everything
+git add src/routes/auth.routes.js    # or stage just one file
+git status                            # confirm what is staged
+git commit -m "feat: add user registration API"
+```
 
 ---
 
-# 15. Pull Request Title
+# 4. The Pull Request
 
-Good:
+```text
+your branch  →  push  →  open PR  →  review  →  fix requested changes
+                    →  approval  →  merge into develop  →  delete branch
+```
+
+Opening one:
+
+1. Push your branch (`git push -u origin feature/short-name`).
+2. GitHub shows a **Compare & pull request** banner → click it.
+3. Check the dropdowns: **base** must be `develop`, **compare** must be your branch.
+4. Write the title and description below.
+5. Request a review from a teammate.
+
+Do not approve or merge your own PR. Do not merge unreviewed branches.
+
+### PR title
+
+Same format as commit messages:
 
 ```text
 feat: add passenger ride booking
-```
-
-```text
 feat: implement driver authentication
+fix: reject rides with invalid pickup point
 ```
 
----
-
-# 16. Pull Request Description
-
-Use:
+### PR description template
 
 ```text
 ## What
-Added passenger ride booking API.
+One or two sentences a teammate who did not write this can understand.
 
 ## Changes
 - Added ride model
-- Added create ride endpoint
+- Added POST /api/rides
 - Added validation
 - Added authentication
 
 ## Testing
-- Tested with Postman
+- Tested happy path with Postman
 - Tested invalid input
 - Tested unauthenticated request
 
 ## Screenshots
-Add screenshots if frontend changes are included.
+Required for frontend changes.
 ```
 
----
-
-# 17. Keep Your Branch Updated
-
-Before opening/merging your PR:
+### Before you open the PR
 
 ```bash
+# make sure you have the latest develop
 git checkout develop
 git pull origin develop
-git checkout feature/backend-auth
+git checkout feature/short-name
 git merge develop
-```
 
-Resolve conflicts if needed.
+# prove it still works
+cd frontend && npm run build     # frontend
+cd backend  && npm run dev       # backend, then hit your endpoints in Postman
+npm test                         # if the project has tests
 
-Then:
-
-```bash
 git push
 ```
 
-For beginners, `merge develop` is safer to understand than immediately using rebase.
+Never open a PR that does not build.
 
 ---
 
-# 18. If You Get a Merge Conflict
+# 5. Keeping your branch alive
 
-Git may show:
+Commit early and often so nothing is lost if your laptop dies:
+
+```bash
+git add .
+git commit -m "wip: booking form validation"
+```
+
+You can push a branch as often as you like before it has a PR. Only `develop` and `main` need review.
+
+---
+
+# 6. Merge conflicts
+
+A conflict means you and a teammate changed the same lines. Git refuses to guess.
 
 ```text
 <<<<<<< HEAD
-your code
+the code from your branch
 =======
-someone else's code
+the code that came from develop
 >>>>>>> develop
 ```
 
-Open the file and decide what the final code should be.
+Fix it by hand:
 
-Then:
+1. Open the file and decide what the final code should be.
+2. Delete the `<<<<<<<`, `=======`, `>>>>>>>` marker lines.
+3. Stage and push:
 
 ```bash
-git add <file>
+git add src/routes/ride.routes.js
 git commit
 git push
 ```
 
-Do not blindly choose one side without understanding the conflict.
+Do not blindly accept one side. Read both and make sure you did not delete someone else's work.
 
----
-
-# 19. Pull Latest Code Before Starting New Work
-
-Every time:
+If a file conflicts so badly you cannot tell what happened, take theirs, then reapply yours:
 
 ```bash
-git checkout develop
-git pull origin develop
-git checkout -b feature/your-next-feature
+git checkout --theirs src/routes/ride.routes.js
+git add src/routes/ride.routes.js
+git commit
 ```
 
-This keeps your new branch based on current code.
+`--theirs` is the incoming side (`develop`), `--ours` is your branch.
 
 ---
 
-# 20. Never Commit These
+# 7. Never commit secrets
 
 ```text
 .env
@@ -523,14 +280,14 @@ node_modules/
 dist/
 build/
 coverage/
-IDE private files
+.vscode/
 API keys
 database passwords
 JWT secrets
 payment secrets
 ```
 
-Example `.gitignore`:
+Expected `.gitignore`:
 
 ```text
 node_modules/
@@ -543,13 +300,7 @@ coverage/
 .vscode/
 ```
 
-Do not ignore files that the whole team actually needs.
-
----
-
-# 21. .env.example
-
-Commit:
+Commit `.env.example` with empty values so teammates know what to fill in:
 
 ```env
 PORT=
@@ -559,329 +310,126 @@ JWT_SECRET=
 CLIENT_URL=
 ```
 
-Do NOT put real values in it.
+If a secret ever gets committed, deleting the file in a later commit is not enough — assume it leaked, rotate it.
 
 ---
 
-# 22. Useful Daily Workflow
-
-Start work:
-
-```bash
-git checkout develop
-git pull origin develop
-git checkout -b feature/frontend-login
-```
-
-Work.
-
-Then:
-
-```bash
-git status
-git diff
-git add .
-git commit -m "feat: add login page"
-git push -u origin feature/frontend-login
-```
-
-Open Pull Request: `feature/frontend-login` -> `develop`.
-
-After merge:
-
-```bash
-git checkout develop
-git pull origin develop
-```
-
-Delete old local branch:
-
-```bash
-git branch -d feature/frontend-login
-```
-
----
-
-# 23. Important Rule for Shared Files
-
-Some files will cause frequent conflicts:
+# 8. Files that conflict a lot
 
 ```text
 package.json
 package-lock.json
-README.md
 App.jsx
 AppRoutes.jsx
+README.md
+DESIGN.md
 ```
 
-If multiple people edit the same file at the same time:
-
-1. Communicate first.
-2. Keep changes focused.
-3. Pull latest develop before starting.
-4. Resolve conflicts carefully.
+Two people editing these at the same time will collide. Communicate first, keep the change focused, and pull `develop` before you start.
 
 ---
 
-# 24. Do Not Commit Broken Code
+# 9. Command cheat sheet
 
-Before creating a PR:
+| I want to | Run this |
+| --- | --- |
+| See what I'm working on | `git status` |
+| See my uncommitted changes | `git diff` |
+| See my branch | `git branch` |
+| See all branches, local + remote | `git branch -a` |
+| See recent commits | `git log --oneline` |
+| See what I pushed | `git log --oneline -5` |
+| Move to another branch | `git checkout branch-name` |
+| Create a branch from `develop` | `git checkout -b feature/name` |
+| Get teammates' latest code | `git pull origin develop` |
+| Bring `develop` into my branch | `git merge develop` |
+| Save everything | `git add .` |
+| Save one file | `git add path/to/file.js` |
+| Commit | `git commit -m "feat: message"` |
+| Push a branch for the first time | `git push -u origin feature/name` |
+| Push again | `git push` |
+| Delete a merged local branch | `git branch -d feature/name` |
+| Delete a merged remote branch | `git push origin --delete feature/name` |
+| Park changes temporarily | `git stash` then `git stash pop` |
+| Throw away changes (dangerous) | `git restore .` |
+| Undo last commit, keep the work | `git reset --soft HEAD~1` |
+| Throw away local `develop` | `git reset --hard origin/develop` |
+| See the repo URL | `git remote -v` |
+| Set your name/email | `git config --global user.name "Your Name"` |
 
-Frontend:
-
-```bash
-npm run build
-```
-
-Backend:
-
-```bash
-npm run dev
-```
-
-Also test the relevant API with Postman.
-
-If the project has tests:
-
-```bash
-npm test
-```
-
----
-
-# 25. Professional Rule: One Feature = One Branch
-
-Bad:
-
-```text
-feature/akash
-```
-
-containing:
-
-```text
-login
-dashboard
-payment
-navbar
-random fixes
-```
-
-Good:
-
-```text
-feature/backend-auth
-feature/backend-rides
-feature/frontend-login
-feature/frontend-booking
-```
-
-Small PRs are easier to review.
+Never use `git push --force` on `develop` or `main`. It rewrites shared history and deletes teammates' commits. If you think you need it on your own branch, ask first.
 
 ---
 
-# 26. Do Not Use Force Push Normally
+# 10. Troubleshooting
 
-Avoid:
+### "I edited files directly on `develop`"
 
-```bash
-git push --force
-```
-
-Especially on:
-
-```text
-main
-develop
-```
-
-and shared branches.
-
-If you truly need to rewrite your own branch history, understand the consequences before using force push.
-
----
-
-# 27. Useful Git Commands
-
-Check current branch:
+Nothing is lost. Do not push. Move the work to a branch:
 
 ```bash
-git branch
-```
-
-Check all local + remote branches:
-
-```bash
-git branch -a
-```
-
-Check status:
-
-```bash
-git status
-```
-
-View commits:
-
-```bash
-git log --oneline
-```
-
-Switch branch:
-
-```bash
-git checkout branch-name
-```
-
-Create branch:
-
-```bash
-git checkout -b branch-name
-```
-
-Pull:
-
-```bash
-git pull
-```
-
-Push:
-
-```bash
-git push
-```
-
-Stage:
-
-```bash
-git add .
-```
-
-Commit:
-
-```bash
-git commit -m "message"
-```
-
-Show remote:
-
-```bash
-git remote -v
-```
-
-Delete a merged local branch:
-
-```bash
-git branch -d feature/backend-auth
-```
-
-Discard local changes (dangerous, throws work away):
-
-```bash
-git restore .
-```
-
-Stash work temporarily:
-
-```bash
-git stash
-git stash pop
-```
-
----
-
-# 28. If You Accidentally Changed `develop` or `main`
-
-Do not immediately push.
-
-Check:
-
-```bash
-git status
-git diff
-```
-
-If changes are not committed:
-
-```bash
-git stash
+git stash                          # if you have not committed yet
 git checkout develop
 git pull origin develop
 git checkout -b feature/your-feature
 git stash pop
 ```
 
-Then commit on the feature branch.
-
-If you already committed on `develop` by mistake:
+If you already committed:
 
 ```bash
 git log --oneline -5
-git reset --soft HEAD~1   # undo the last commit, keep the changes
+git reset --soft HEAD~1            # undo the commit, keep the changes
 git checkout -b feature/your-feature
 git commit -m "feat: your message"
 git push -u origin feature/your-feature
 ```
 
-Then make local `develop` match the remote again:
+Then bring local `develop` back in line with the remote:
 
 ```bash
 git checkout develop
 git reset --hard origin/develop
 ```
 
-Never force push `develop` or `main`.
-
----
-
-# 29. Recommended GitHub Branch Model
-
-```text
-                    main  (stable / release)
-                      |
-                      |  release PR (reviewed)
-                      |
-                    develop  (all merged team code)
-                      |
-        +-------------+-------------+-------------+
-        |             |             |             |
-     feature/      feature/      feature/      fix/  docs/
-   frontend-login  backend-auth frontend-booking bug  topic
-        |             |             |             |
-        +--- Pull Requests --------+------------+
-                      |
-                    Review
-                      |
-                   develop
-```
-
-Merge rules:
-
-```text
-feature/*, fix/*, docs/*  ->  develop  (normal, frequent)
-develop                  ->  main     (stable, demo-ready milestones only)
-```
-
-Only two permanent branches are needed: `main` and `develop`. You do NOT need `release/*` or `hotfix/*`.
-
----
-
-## 29.1 Release: Merge `develop` into `main`
-
-When the team wants a stable version (demo, submission, deployment):
-
-Preferred, on GitHub - open a Pull Request with base `main` and compare `develop`. You get a clean change list and a recorded review.
-
-Because `develop` is the default branch, GitHub will pre-fill the base as `develop`. Change it to `main` before creating the PR.
-
-Or from the terminal (team lead only):
+### "My branch is behind `develop`"
 
 ```bash
-git checkout main
-git pull origin main
-git merge develop
-git push origin main
+git fetch origin
+git merge origin/develop
+git push
 ```
+
+### "I committed the wrong file / forgot to add a file"
+
+```bash
+git add path/to/forgotten-file.js
+git commit --amend --no-edit
+```
+
+Only amend commits you have not pushed yet. Once pushed, add a new commit instead.
+
+### "I want to throw away one file's changes"
+
+```bash
+git restore path/to/file.js
+```
+
+### "I pushed a branch but there's no PR option"
+
+Check the branch exists on the remote: `git push -u origin feature/short-name`. GitHub only offers a PR for pushed branches.
+
+### "The PR shows a huge number of files"
+
+Your branch was probably not branched from an up-to-date `develop`. Merge `develop` in and the diff should shrink. If it does not, check you did not accidentally commit `node_modules/` or `dist/`.
+
+---
+
+# 11. Release to main
+
+Team lead only, when we want a stable demo or deployment.
+
+On GitHub, open a Pull Request with base `main` and compare `develop`. Because `develop` is the default branch, GitHub pre-fills the base as `develop` — **change it to `main`**.
 
 Then everyone syncs:
 
@@ -894,94 +442,55 @@ git pull origin main
 
 ---
 
-# 30. Golden Rules
+# 12. Golden rules
 
 ```text
- 1. Never develop directly on main.
- 2. Never work directly on develop either. Branch from develop.
- 3. Pull latest develop before starting new work.
- 4. One feature = one branch.
- 5. Use meaningful commit messages.
- 6. Test before pushing.
- 7. Open a Pull Request into develop.
- 8. Review teammates' code.
- 9. Never commit secrets.
-10. Keep PRs small.
-11. Communicate before editing shared files.
-12. Keep main stable; merge develop into main only for releases.
-13. Always check a PR's base branch is develop.
-14. Do not copy/paste code you cannot explain.
-15. `develop` is the default branch. Never let a release PR target `main` by accident.
+ 1. Never develop on main.
+ 2. Branch from develop, always pull develop first.
+ 3. One feature = one branch.
+ 4. Open a PR into develop, never into main by accident.
+ 5. One teammate reviews before merge. Never approve your own PR.
+ 6. Meaningful commit messages.
+ 7. Never push code you have not run or built.
+ 8. Never commit secrets or node_modules.
+ 9. Keep PRs small.
+10. Communicate before touching shared files.
+11. develop → main only for releases, team lead only.
+12. Never force push develop or main.
+13. Do not commit code you cannot explain.
 ```
 
 ---
 
-# 31. Complete Example
+# 13. Worked example
 
-Akash is implementing ride creation.
+Akash builds the create-ride API.
 
 ```bash
 git checkout develop
 git pull origin develop
-
 git checkout -b feature/backend-create-ride
 ```
 
-Implement:
-
-```text
-Ride model
-Ride controller
-POST /api/rides
-Validation
-Tests
-```
-
-Check:
+He writes the ride model, controller, `POST /api/rides`, validation, and tests. Then:
 
 ```bash
 git status
 git diff
-```
-
-Commit:
-
-```bash
 git add .
 git commit -m "feat: add create ride API"
-```
-
-Push:
-
-```bash
 git push -u origin feature/backend-create-ride
 ```
 
-Create PR:
+He tests the endpoint in Postman, opens a PR into `develop`, and the team reviews it.
 
-```text
-feature/backend-create-ride
-              |
-              v
-           develop
-```
-
-After review and merge:
+After approval and merge:
 
 ```bash
 git checkout develop
 git pull origin develop
 git branch -d feature/backend-create-ride
+git push origin --delete feature/backend-create-ride
 ```
 
-Later, for the release/demo, the team lead merges `develop` into `main`:
-
-```bash
-git checkout main
-git pull origin main
-git merge develop
-git push origin main
-```
-
-That is the normal team workflow.
-
+For the demo, the team lead opens a release PR from `develop` into `main`.
