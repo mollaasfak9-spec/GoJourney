@@ -1,6 +1,6 @@
 # RideX GitHub Guide - Beginner to Professional Workflow
 
-Team workflow: we build from `develop`, merge everything into `develop`, and only release to `main`.
+Team workflow: `develop` is the **default branch**. We build from `develop`, merge everything into `develop`, and only release to `main`.
 
 This document is the team's Git/GitHub cheat sheet.
 
@@ -8,7 +8,7 @@ This document is the team's Git/GitHub cheat sheet.
 
 ```text
 main      = stable / released code. Do not touch.
-develop   = all our merged work. This is where we build from.
+develop   = the repo DEFAULT branch. All our merged work. We build from here.
 feature/* = your own branch for one task. PR -> develop.
 ```
 
@@ -57,7 +57,7 @@ cd ridex
 
 # 3. Understand Branches: `main` and `develop`
 
-We use two permanent branches:
+We use two permanent branches, and `develop` is the repository **default branch**:
 
 ```text
 main
@@ -86,6 +86,13 @@ Rules:
 - Do NOT work directly on `develop` either. Feature branches come from `develop`.
 - All Pull Requests merge into `develop`.
 - `develop` is merged into `main` only when we want a stable release.
+
+Because `develop` is the default branch:
+
+- opening the repo lands you on `develop`, not `main`
+- the "Code" button and `git clone` give you `develop`
+- new Pull Requests default to base `develop`
+- still confirm the base branch is `develop` before merging
 
 Full picture:
 
@@ -164,7 +171,19 @@ Suggested protection:
 | `main`   | yes        | 1 approval     | yes              |
 | `develop`| yes        | 1 approval     | yes              |
 
-Optional: set `develop` as the repository's **default branch** so PRs target it by default.
+### Step 3: set `develop` as the default branch (required)
+
+```text
+GitHub → repo → Settings → Branches → Default branch → select develop → Update
+```
+
+Our default branch is `develop`. This means:
+
+- teammates land on `develop` when they open the repo
+- `git clone` checks out `develop`
+- new Pull Requests already target `develop`
+
+`main` stays protected and is only touched through a release PR from `develop`.
 
 ---
 
@@ -389,7 +408,7 @@ Merge into develop
 
 Do not merge unreviewed feature branches into `develop`.
 
-When opening the PR, always confirm the base branch is `develop`, not `main`.
+When opening the PR, always confirm the base branch is `develop`, not `main`. GitHub pre-fills `develop` because it is the default branch, but check the dropdown anyway.
 
 ---
 
@@ -853,6 +872,8 @@ When the team wants a stable version (demo, submission, deployment):
 
 Preferred, on GitHub - open a Pull Request with base `main` and compare `develop`. You get a clean change list and a recorded review.
 
+Because `develop` is the default branch, GitHub will pre-fill the base as `develop`. Change it to `main` before creating the PR.
+
 Or from the terminal (team lead only):
 
 ```bash
@@ -890,6 +911,7 @@ git pull origin main
 12. Keep main stable; merge develop into main only for releases.
 13. Always check a PR's base branch is develop.
 14. Do not copy/paste code you cannot explain.
+15. `develop` is the default branch. Never let a release PR target `main` by accident.
 ```
 
 ---

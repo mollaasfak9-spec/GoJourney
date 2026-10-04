@@ -435,7 +435,7 @@ Every page below follows `PAGE_PLAN.md` for content and routes. This section def
 - Headline: Hero size, centered, three short lines or two balanced lines. Sub-copy in `muted-strong`, 18px, 480px max width.
 - Two CTAs side by side: Primary "Book a Ride", Secondary "Become a Driver".
 - Beneath: the tilted map (perspective) fading into `paper` at its top, a floating **RideCard** overlapping the map's upper area, and a black route line with a destination pin running off the lower right.
-- Entrance motion: the map slides up slightly and the route line **draws itself once** on load. This is the only auto-playing animation on the page.
+- Motion: the headline mask-reveals, the map rises into its tilt, the route draws, and the ride card floats in, as a single timeline. Full choreography in section 11.4.
 
 **Stats row (follows Brickwise)**
 
@@ -640,26 +640,188 @@ Check your connection and try again.
 
 ---
 
-## 11. Motion
+## 11. Motion and animation
 
-Motion explains a change. It is not decoration.
+Motion is what separates a good template from a product that feels alive. In RideX it does three jobs: **introduce** (the landing page tells a short story), **explain** (state changes show what happened), and **confirm** (every action gets a response). Nothing moves just to move.
 
-| Moment | Motion | Duration |
+### 11.1 Animation stack
+
+| Library | Role | Where |
 | --- | --- | --- |
-| Landing load | Map rises slightly, route line draws once | 900ms, once |
-| Button hover | Lift 1px, shadow deepens | 150ms |
-| Button press | Scale 0.98 | 100ms |
-| Sheet / modal open | Slide up and fade | 240ms |
-| Ride status change | Timeline dot fills, status text cross-fades | 300ms |
-| Fare change | Number cross-fades | 150ms |
-| Searching for driver | Slow expanding ring on pickup | 1.6s loop |
-| New driver request | Card slides in | 200ms |
-| Page transition | Quick fade only | 150ms |
+| **GSAP** (`gsap` + `@gsap/react`) with ScrollTrigger, SplitText, DrawSVG, MotionPath | Choreographed timelines, scroll-driven storytelling, SVG route drawing, car moving along a path | Landing page, map visuals, ride tracking, number counters |
+| **Motion** (`motion`, formerly Framer Motion) | Component-level enter/exit, layout animation, springs, gestures | Modals, bottom sheets, toasts, dropdowns, page transitions, list changes, tab pill, request cards |
+| **Lenis** (`lenis`) | Smooth, inertial scrolling | Landing page only |
+| **CSS transitions** | Hover, focus, press | Buttons, links, inputs, cards |
 
-Rules:
-- Easing: `cubic-bezier(0.22, 1, 0.36, 1)` for entrances, `ease-out` for hovers.
-- **No** scroll-triggered fade-up on every section. **No** hover transforms on every card. **No** parallax.
-- Respect `prefers-reduced-motion`: replace all movement with instant changes or simple fades, and stop the looping ring.
+Why this split:
+- GSAP is the industry standard for timelines and scroll choreography. Since version 3.13 the whole library and its former paid plugins (ScrollTrigger, SplitText, DrawSVG, MotionPath) are free for everyone. Check the current license on gsap.com before you ship.
+- Motion is the better fit for React component state: `AnimatePresence` handles exit animations that GSAP handles awkwardly, and its springs feel natural for sheets and toasts.
+- Use each for what it does best. Never animate the same element with both.
+- Do not add more animation libraries (no AOS, no Animate.css, no Lottie, no three.js in the MVP).
+
+Install: `gsap`, `@gsap/react`, `motion`, `lenis`.
+
+### 11.2 Motion tokens
+
+All durations and easings come from these tokens. Do not invent new ones.
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `dur-instant` | 100ms | Press feedback |
+| `dur-fast` | 180ms | Hover, focus, toggles, small fades |
+| `dur-base` | 320ms | Cards, tabs, dropdowns, toasts |
+| `dur-slow` | 600ms | Sheets, modals, page transitions |
+| `dur-hero` | 900–1400ms | Landing timelines only |
+| `ease-out` | `cubic-bezier(0.22, 1, 0.36, 1)` (GSAP: `expo.out` or `power4.out`) | Entrances. The default. |
+| `ease-in-out` | `cubic-bezier(0.65, 0, 0.35, 1)` (GSAP: `power3.inOut`) | Moves between two visible positions |
+| `ease-in` | `cubic-bezier(0.5, 0, 0.75, 0)` | Exits only, kept short |
+| `spring-soft` | stiffness 260, damping 28 (Motion) | Sheets, tab pill, toasts |
+| `stagger-tight` | 0.06s | Letters or small items |
+| `stagger-base` | 0.10s | Cards and list rows |
+
+Entrances use `ease-out`. Exits are about 30% faster than entrances. Never use linear except for looping progress and the route draw.
+
+### 11.3 Motion rules
+
+1. **Animate `transform` and `opacity` only.** Never animate width, height, top, left, or box-shadow in a loop.
+2. **One orchestrated moment per view.** The landing hero is the showpiece. Everything else is quiet.
+3. **Trigger per group, not per element.** One ScrollTrigger per section, with the children staggered inside it. Do not give every card its own trigger.
+4. **Play once.** Scroll reveals run once and do not reverse. Only scroll-linked effects (map flattening, progress) scrub.
+5. **No layout shift.** Hidden start states are set before first paint (CSS class or `gsap.set` inside `useGSAP`), and use `autoAlpha`. Wait for `document.fonts.ready` before splitting text.
+6. **Motion follows the user.** Hover, tap, and drag always answer within 100ms.
+7. **Keep it short.** Interface motion is 150–400ms. Only landing timelines go beyond 600ms.
+8. **Distance is small.** Entrances travel 12–24px, not 100px. Text reveals use a mask slide, not a big fade-and-fly.
+9. **Clean up.** Every GSAP animation lives inside `useGSAP` with a scope so it reverts on unmount. Kill ScrollTriggers on route change and call `ScrollTrigger.refresh()` after images and fonts load.
+10. **Respect `prefers-reduced-motion`.** Use `gsap.matchMedia()` to run the full experience only under `(prefers-reduced-motion: no-preference)`. In reduced mode, content is simply visible, transitions become 150ms fades, loops stop, and Lenis is disabled.
+11. **Lighter on phones.** Under 768px, disable scrub effects, tilt, and the magnetic button. Keep reveals and the route draw.
+
+### 11.4 Landing page choreography
+
+**Hero intro** (one GSAP timeline, about 2.2s total, plays once on load)
+
+| Step | What happens | Timing |
+| --- | --- | --- |
+| 1 | Navbar fades down 12px | 0.0s, 500ms |
+| 2 | Headline lines reveal: each line sits in an `overflow: hidden` mask and slides up from 110% (SplitText by lines, `stagger-base`) | 0.15s, 900ms, `expo.out` |
+| 3 | Sub-copy fades in and rises 16px | 0.65s, 600ms |
+| 4 | CTA buttons rise and fade, staggered | 0.8s, 600ms |
+| 5 | Map plane rises from below and settles into its tilt (`rotateX` 62° to 55°, `y` 80 to 0), with the top edge already faded into paper | 0.4s, 1400ms, `power4.out` |
+| 6 | Route line draws from pickup to destination (DrawSVG, 0% to 100%) | 1.1s, 1200ms, `power2.inOut` |
+| 7 | Pickup dot pops in, destination pin drops in with a tiny bounce | 1.1s and 2.1s |
+| 8 | Floating RideCard rises and fades in, then its progress track fills | 1.5s, 700ms |
+
+After the intro, two subtle loops run:
+- The highlighted car travels slowly along the route (MotionPath, 14s, `none` ease, loops back by fading out and in at the start).
+- The RideCard drifts up and down 6px on a 5s sine loop.
+
+Both loops pause when the tab is hidden and are off in reduced-motion mode.
+
+**Hero extras (desktop with a fine pointer only)**
+- The primary CTA has a **magnetic** pull: it follows the cursor within a 60px radius, up to 8px, and eases back on leave (`gsap.quickTo`).
+- The map tilt responds very slightly to pointer position (max 2°). Skip this if it ever feels distracting.
+
+**Scroll story** (Lenis smooth scroll + ScrollTrigger)
+
+| Section | Animation |
+| --- | --- |
+| Hero to next section | As the page scrolls, the map **flattens** from 55° toward 40° and fades slightly (scrubbed, subtle) |
+| Stats row | Numbers **count up** once when entering the viewport (`power2.out`, 1.4s). Dividers draw in from the left (scaleX 0 to 1). |
+| How RideX works | The three step cards reveal with `stagger-base`. A thin connector line between them draws across as they appear, because it is a real sequence. |
+| Vehicle types | Cards rise 24px with stagger. The vehicle render slides in 16px from the side. Hover tilts the vehicle 2° and lifts the card 4px (CSS). |
+| Why RideX | Headline reveals by lines, the 2×2 grid staggers in. The wide card's small map draws its dotted route. |
+| Final CTA block | The black block scales from 0.96 to 1 and its radius eases from 48px to 32px as it enters. The text lines reveal using the same mask technique as the hero. |
+| Footer | No animation |
+
+Do not pin sections or hijack scroll. The page must scroll at the normal pace.
+
+### 11.5 Authenticated app motion
+
+| Moment | Motion | Tool |
+| --- | --- | --- |
+| Route change | Content fades out 120ms, fades in with 12px rise, 240ms (`AnimatePresence`, `mode="wait"`) | Motion |
+| Dashboard load | Cards stagger in once (`stagger-base`, 16px rise). Never re-run on data refetch. | Motion |
+| Skeleton to content | Cross-fade 180ms, no movement | CSS |
+| Modal | Backdrop fades, panel scales 0.96 to 1 and fades, `spring-soft` | Motion |
+| Bottom sheet | Slides up with `spring-soft`, drag to dismiss, snap points on the booking sheet | Motion |
+| Toast | Slides 16px and fades, exits 30% faster, swipe to dismiss on mobile | Motion |
+| Dropdown and suggestions | Fade and scale from 0.98, origin at the trigger, `dur-fast` | Motion |
+| Tab pill (FilterTabs) | The selected white pill **slides** between tabs using a shared `layoutId` | Motion |
+| Status badge change | Cross-fade of text and background, 180ms | CSS |
+| Fare and numbers change | Value counts or cross-fades over 300ms (tabular figures prevent jitter) | GSAP or CSS |
+| Toggle (online/offline) | Knob slides with `spring-soft`, track color fades, the `live` dot starts a slow pulse | Motion |
+| Ride request card arrives | Slides down 16px and fades in over 320ms. The countdown bar drains linearly. Card exits by sliding left and collapsing its height. | Motion |
+| Button press | Scale 0.98 for 100ms, spinner replaces the arrow on loading | CSS |
+| Card hover (clickable cards only) | Lift 2px, shadow moves from flat to `float`, 180ms | CSS |
+
+**Booking page**
+1. When pickup and destination are both set, the route **draws** on the map (DrawSVG, 900ms) while the camera eases to fit both points.
+2. The vehicle cards stagger in once, then the fare cross-fades in.
+3. Switching vehicle types animates the selected black border between cards (`layoutId`) and counts the fare to the new value.
+4. On Confirm, the button shows its loading state, then the panel hands off to the tracking page with a shared-element feel: the route stays on screen while the panel content changes.
+
+**Ride tracking**
+- **Searching:** a ring expands from the pickup dot (scale 1 to 3, opacity 0.35 to 0, 1.8s loop, 2 rings offset by 0.9s).
+- **Driver accepted:** the driver car fades in at its start point. The ring stops and fades out. The status line cross-fades to "Driver accepted".
+- **Driver arriving:** the car moves along the route path (MotionPath) and its position eases to each new update instead of jumping. When real GPS arrives, use `gsap.quickTo` for position and rotate the car toward its heading.
+- **Timeline:** when a step completes, its connector line fills downward (scaleY from the top, 400ms), the dot fills black with a small scale pop 1 to 1.15 to 1, and the next step's ring starts its pulse.
+- **Completed:** the map dims, the receipt card rises from the bottom, the fare counts up, the 5-star rating row fills its stars in sequence on hover or tap.
+
+**Driver active ride:** when the state advances, the single action button swaps with a 200ms vertical cross-slide (old label out up, new label in from below) and the thin 4-step progress line fills.
+
+**Admin:** keep it nearly still. Stat numbers count up once on first load, tables fade in, rows have a `surface-soft` hover. No scroll effects.
+
+### 11.6 Loops and ambient motion
+
+Only these loops are allowed:
+- Live dot pulse (online, on the way), 2s, opacity and scale only
+- Searching ring on the map
+- Landing car and RideCard drift
+- Skeleton shimmer, 2s
+
+All loops stop when the tab is hidden, in reduced-motion mode, and when scrolled out of view.
+
+### 11.7 Implementation notes
+
+Use one shared file, `src/motion/`, so every animation uses the same tokens:
+
+```text
+src/motion/
+  tokens.js        durations, eases, staggers
+  gsap.js          registers plugins once, sets defaults
+  useReveal.js     hook: staggered reveal for a section (ScrollTrigger, once)
+  useCountUp.js    hook: number count-up on enter
+  variants.js      shared Motion variants (fade, rise, sheet, toast)
+  SmoothScroll.jsx Lenis provider, landing only, disabled for reduced motion
+```
+
+Setup rules:
+- Register plugins once in `gsap.js`: `gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText, DrawSVGPlugin, MotionPathPlugin)`.
+- Connect Lenis to ScrollTrigger (`lenis.on('scroll', ScrollTrigger.update)` and drive Lenis from `gsap.ticker`), and turn off `gsap.ticker.lagSmoothing` for it.
+- Wrap each page's animations in `useGSAP(() => {...}, { scope: ref })` so selectors stay local and cleanup is automatic.
+- Use `gsap.matchMedia()` for the reduced-motion and mobile branches.
+- Route draw needs the SVG path to have `pathLength` set. Keep map SVG paths simple (one path per route).
+- Lazy-load GSAP plugins and Lenis only on the landing route so the app bundle stays small.
+
+A hero timeline should read like this (shape only, not production code):
+
+```js
+const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+tl.from('.nav', { autoAlpha: 0, y: -12, duration: 0.5 })
+  .from(split.lines, { yPercent: 110, duration: 0.9, stagger: 0.1 }, 0.15)
+  .from('.hero-sub, .hero-cta > *', { autoAlpha: 0, y: 16, stagger: 0.08 }, 0.65)
+  .from('.map-plane', { y: 80, rotateX: 62, duration: 1.4, ease: 'power4.out' }, 0.4)
+  .from('.route', { drawSVG: '0%', duration: 1.2, ease: 'power2.inOut' }, 1.1)
+  .from('.ride-card', { autoAlpha: 0, y: 24, duration: 0.7 }, 1.5);
+```
+
+### 11.8 Performance budget
+
+- Animations hold 60fps on a mid-range phone. Test with 4x CPU throttling in DevTools.
+- Add `will-change: transform` only to elements that animate continuously (map plane, car, RideCard) and remove it when idle.
+- Never animate large blurred or shadowed elements. Fade them instead.
+- The map and car are SVG or CSS. No video, no Lottie, no canvas in the MVP.
+- Landing JS for animation stays under about 90KB gzipped, loaded after first paint.
+- Cumulative Layout Shift stays at or near 0. Animations never move content that is already read.
 
 ---
 
@@ -750,7 +912,8 @@ Keep the product clean and finishable. Do not add:
 - Heavy bold headlines or all-caps tracked labels
 - Identical cards repeated for every section when a list or open layout works better
 - Fake large-number statistics
-- Parallax, scroll-jacking, cursor effects, or confetti
+- Scroll-jacking, pinned-section tricks, heavy parallax, custom cursors, page preloaders, or confetti
+- Any animation library beyond the four in section 11.1, or scattered one-off animations that ignore the motion tokens
 - Chat, in-app voice calls, surge-pricing visuals, coupons, or social features (see `PROJECT_PLAN.md` section 34)
 - Separate one-off versions of Button, Card, Input, or Badge on any page
 
@@ -764,7 +927,7 @@ Keep the product clean and finishable. Do not add:
 4. Follow the layout sketches here and in `PAGE_PLAN.md`. Do not redesign navigation.
 5. Build every page with loading, empty, error, and success states.
 6. Check each page at mobile, tablet, and desktop widths before calling it done.
-7. Do not add dependencies for something CSS or Lucide can do.
+7. Do not add dependencies for something CSS or Lucide can do. The only approved animation libraries are GSAP, Motion, and Lenis (section 11.1). All timing and easing come from `src/motion/tokens.js`.
 8. Never invent backend endpoints. Use mock data until the API contract exists.
 9. If something is not defined here, choose the quieter, simpler option and document it in this file.
 
@@ -781,5 +944,10 @@ Keep the product clean and finishable. Do not add:
 - [ ] Touch targets are 44px or larger
 - [ ] Keyboard focus is visible
 - [ ] Loading, empty, error, and success states exist
-- [ ] Reduced motion is respected
+- [ ] Reduced motion is respected (`gsap.matchMedia`, Lenis off, loops stopped)
+- [ ] Animations use motion tokens and only animate transform and opacity
+- [ ] GSAP animations live in `useGSAP` and clean up on route change
+- [ ] Scroll reveals run once, one trigger per section, no scroll hijacking
+- [ ] Landing intro timeline and route draw run without layout shift
+- [ ] Animations hold 60fps on a throttled mobile profile
 - [ ] No console errors, no layout shift on load
