@@ -115,11 +115,40 @@ If `develop` does not exist yet on GitHub, see section 4.1.
 
 Only the team lead does this, once.
 
+### Case A: repo already has commits (for example the default branch is `master`)
+
+Rename `master` to `main`, then create `develop` from it:
+
+```bash
+git branch -m master main        # rename current branch to main
+git checkout -b develop          # create develop from main
+git push -u origin main
+git push -u origin develop
+git checkout develop             # develop is where we work from now
+```
+
+Check it worked:
+
+```bash
+git branch -v
+```
+
+You should see `main` and `develop` on the same commit.
+
+### Case B: remote already has a `main` branch
+
 ```bash
 git checkout main
 git pull origin main
 git checkout -b develop
 git push -u origin develop
+git checkout develop
+```
+
+If `main` does not exist on the remote yet, push it first:
+
+```bash
+git push -u origin main
 ```
 
 On GitHub, protect `develop` and `main`:
