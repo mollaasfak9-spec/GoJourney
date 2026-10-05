@@ -1,22 +1,57 @@
 const express = require("express");
 
-const {
-    createPayment,
-    getPayment,
-    getMyPayments
-} = require("../controllers/payment.controller");
+const paymentController = require("../controllers/payment.controller");
+const paymentValidator = require("../validators/payment.validator");
+const rideValidator = require("../validators/ride.validator");
 
-const authMiddleware = require("../middleware/auth.middleware");
+const { authMiddleware } = require("../middleware/auth.middleware");
+const requireRole = require("../middleware/role.middleware");
+const validate = require("../middleware/validation.middleware");
+const { ROLES } = require("../utils/constants");
 
 const router = express.Router();
 
-// Create payment
-router.post("/", authMiddleware, createPayment);
+router.use(authMiddleware);
 
-// Get single payment
-router.get("/:id", authMiddleware, getPayment);
+// ------------------------------------------
+// History
+// BACKEND_PLAN.md section 32
+// ------------------------------------------
 
-// Get user's payments
-router.get("/", authMiddleware, getMyPayments);
+// GET /api/payments/history
+router.get(
+    "/history",
+    requireRole(ROLES.PASSENGER),
+    validate("query", paymentValidator.historyQuery),
+    paymentController.getPaymentHistory
+);
+
+// GET /api/payments/ride/:rideId
+router.get(
+    "/ride/:rideId",
+    validate("params", rideValidator.rideIdParam),
+    paymentController.getPaymentByRide
+);
+
+// ------------------------------------------
+// Single payment and creation
+// BACKEND_PLAN.md section 32
+// ------------------------------------------
+
+// POST /api/payments/:rideId
+router.post(
+    "/:rideId",
+    requireRole(ROLES.PASSENGER),
+    validate("params", rideValidator.rideIdParam),
+    validate("body", paymentValidator.createPayment),
+    paymentController.createPayment
+);
+
+// GET /api/payments/:paymentId
+router.get(
+    "/:paymentId",
+    validate("params", paymentValidator.paymentIdParam),
+    paymentController.getPayment
+);
 
 module.exports = router;
