@@ -1,22 +1,38 @@
-const roleMiddleware = (...allowedRoles) => {
-    return (req, res, next) => {
+const ApiError = require("../utils/ApiError");
+const { ROLES_LIST } = require("../utils/constants");
 
+/**
+ * requireRole("admin") / requireRole("driver") / requireRole("passenger")
+ * (BACKEND_PLAN.md section 13)
+ *
+ * The backend is the security boundary, frontend route protection is not.
+ */
+const requireRole = (...allowedRoles) => {
+    const roles = allowedRoles.flat();
+
+    roles.forEach((role) => {
+        if (!ROLES_LIST.includes(role)) {
+            throw new Error(`Unknown role passed to requireRole: ${role}`);
+        }
+    });
+
+    return (req, res, next) => {
         if (!req.user) {
-            return res.status(401).json({
-                success: false,
-                message: "Authentication required"
-            });
+            return next(ApiError.unauthorized("Authentication required", "TOKEN_REQUIRED"));
         }
 
-        if (!allowedRoles.includes(req.user.role)) {
-            return res.status(403).json({
-                success: false,
-                message: "Access denied"
-            });
+        if (!roles.includes(req.user.role)) {
+            return next(
+                ApiError.forbidden(
+                    `This action is restricted to: ${roles.join(", ")}`,
+                    "INSUFFICIENT_ROLE"
+                )
+            );
         }
 
         next();
     };
 };
 
-module.exports = roleMiddleware;
+module.exports = requireRole;
+module.exports.requireRole = requireRole;

@@ -1,55 +1,65 @@
 const mongoose = require("mongoose");
 
+const {
+    PAYMENT_METHOD_LIST,
+    PAYMENT_STATUS,
+    PAYMENT_STATUS_LIST
+} = require("../utils/constants");
+
+// Payment (BACKEND_PLAN.md section 31)
 const paymentSchema = new mongoose.Schema(
     {
-        user: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-            required: true
-        },
-
-        ride: {
+        rideId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Ride",
-            required: true
+            required: true,
+            unique: true,
+            index: true
+        },
+
+        passengerId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            index: true
+        },
+
+        driverId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Driver",
+            default: null,
+            index: true
         },
 
         amount: {
             type: Number,
-            required: true,
+            required: [true, "Amount is required"],
             min: 0
         },
 
         method: {
             type: String,
-            enum: [
-                "cash",
-                "upi",
-                "card",
-                "wallet"
-            ],
-            required: true
+            enum: {
+                values: PAYMENT_METHOD_LIST,
+                message: "Method must be one of: {VALUE}"
+            },
+            required: [true, "Payment method is required"]
         },
 
         status: {
             type: String,
-            enum: [
-                "pending",
-                "success",
-                "failed",
-                "refunded"
-            ],
-            default: "pending"
+            enum: {
+                values: PAYMENT_STATUS_LIST,
+                message: "Invalid payment status"
+            },
+            default: PAYMENT_STATUS.PENDING,
+            index: true
         },
 
         transactionId: {
             type: String,
             unique: true,
-            sparse: true
-        },
-
-        paymentGateway: {
-            type: String,
+            sparse: true,
             default: null
         },
 
@@ -62,5 +72,15 @@ const paymentSchema = new mongoose.Schema(
         timestamps: true
     }
 );
+
+paymentSchema.index({ passengerId: 1, createdAt: -1 });
+
+paymentSchema.set("toJSON", {
+    virtuals: true,
+    transform: (doc, ret) => {
+        delete ret.__v;
+        return ret;
+    }
+});
 
 module.exports = mongoose.model("Payment", paymentSchema);

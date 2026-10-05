@@ -1,104 +1,126 @@
 const User = require("../models/User");
+const ApiError = require("../utils/ApiError");
+const asyncHandler = require("../utils/asyncHandler");
+const { success, created } = require("../utils/response");
+const { ROLES } = require("../utils/constants");
+const { getOrCreateDriverProfile } = require("../services/driver.service");
 
-// =========================
-// Register User
-// =========================
-const register = async (req, res, next) => {
-    try {
-        const { name, email, phone, password, role } = req.body;
+const {
+    generateToken,
+    setAuthCookie,
+    clearAuthCookie
+} = require("../middleware/auth.middleware");
 
-        if (!name || !email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: "Name, email and password are required"
-            });
-        }
+const { SELF_SERVICE_ROLES } = require("../validators/auth.validator");
 
-        const existingUser = await User.findOne({ email });
+// ==========================================
+// POST /api/auth/register
+// BACKEND_PLAN.md section 11
+// ==========================================
+const register = asyncHandler(async (req, res) => {
+    const { name, email, phone, password, role } = req.body;
 
-        if (existingUser) {
-            return res.status(409).json({
-                success: false,
-                message: "User already exists"
-            });
-        }
-
-        const user = await User.create({
-            name,
-            email,
-            phone,
-            password,
-            role: role || "user"
-        });
-
-        res.status(201).json({
-            success: true,
-            message: "User registered successfully",
-            user
-        });
-    } catch (error) {
-        next(error);
+    // Admin accounts can never be created through self signup
+    if (role && !SELF_SERVICE_ROLES.includes(role)) {
+        throw ApiError.forbidden(
+            "This role cannot be self assigned. Ask an admin to create the account.",
+            "ROLE_NOT_SELF_ASSIGNABLE"
+        );
     }
-};
 
-// =========================
-// Login User
-// =========================
-const login = async (req, res, next) => {
-    try {
-        const { email, password } = req.body;
+    const requestedRole = role || ROLES.PASSENGER;
 
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: "Email and password are required"
-            });
-        }
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
 
-        const user = await User.findOne({ email });
-
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password"
-            });
-        }
-
-        // Temporary password check
-        // Later bcrypt.compare() should be used
-        if (user.password !== password) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password"
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "Login successful",
-            user
-        });
-    } catch (error) {
-        next(error);
+    if (existingUser) {
+        throw ApiError.conflict("An account with this email already exists", "EMAIL_ALREADY_REGISTERED");
     }
-};
 
-// =========================
-// Logout User
-// =========================
-const logout = async (req, res, next) => {
-    try {
-        res.status(200).json({
-            success: true,
-            message: "Logout successful"
-        });
-    } catch (error) {
-        next(error);
+    const user = await User.create({
+        name,
+        email,
+        phone,
+        // The pre-save hook hashes this into passwordHash (section 39)
+        passwordHash: password,
+        role: requestedRole
+    });
+
+    // Drivers get their profile immediately so /api/drivers/me works right away
+    if (requestedRole === ROLES.DRIVER) {
+        await getOrCreateDriverProfile(user._id);
     }
-};
+
+    const token = generateToken(user);
+
+    setAuthCookie(res, token);
+
+    return created(res, {
+        message: "Account registered successfully",
+        data: { user, token }
+    });
+});
+
+// ==========================================
+// POST /api/auth/login
+// BACKEND_PLAN.md section 11
+// ==========================================
+const login = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email: email.toLowerCase() }).select("+passwordHash");
+
+    // Same message for unknown email and wrong password, no user enumeration
+    if (!user) {
+        throw ApiError.unauthorized("Invalid email or password", "INVALID_CREDENTIALS");
+    }
+
+    const isPasswordValid = await user.comparePassword(password);
+
+    if (!isPasswordValid) {
+        throw ApiError.unauthorized("Invalid email or password", "INVALID_CREDENTIALS");
+    }
+
+    if (!user.isActive) {
+        throw ApiError.forbidden("Your account has been deactivated", "ACCOUNT_DEACTIVATED");
+    }
+
+    const token = generateToken(user);
+
+    setAuthCookie(res, token);
+
+    return success(res, {
+        message: "Login successful",
+        data: { user, token }
+    });
+});
+
+// ==========================================
+// GET /api/auth/me
+// BACKEND_PLAN.md section 11 (protected)
+// ==========================================
+const getCurrentUser = asyncHandler(async (req, res) =>
+    success(res, {
+        message: "Current user fetched successfully",
+        data: { user: req.user }
+    })
+);
+
+// ==========================================
+// POST /api/auth/logout
+// BACKEND_PLAN.md section 11
+// ==========================================
+const logout = asyncHandler(async (req, res) => {
+    clearAuthCookie(res);
+
+    return success(res, {
+        message: "Logout successful",
+        data: null
+    });
+});
 
 module.exports = {
     register,
     login,
-    logout
+    logout,
+    getCurrentUser
 };

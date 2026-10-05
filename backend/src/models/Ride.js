@@ -1,112 +1,147 @@
 const mongoose = require("mongoose");
 
-const rideSchema = new mongoose.Schema(
-    {
-        user: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-            required: true
-        },
+const { VEHICLE_TYPES, RIDE_STATUS, RIDE_STATUS_LIST } = require("../utils/constants");
 
-        driver: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Driver",
+const pointSchema = new mongoose.Schema(
+    {
+        address: {
+            type: String,
+            trim: true,
             default: null
         },
 
-        pickupLocation: {
-            address: {
-                type: String,
-                required: true
-            },
-
-            latitude: {
-                type: Number
-            },
-
-            longitude: {
-                type: Number
-            }
+        lat: {
+            type: Number,
+            required: [true, "Latitude is required"],
+            min: -90,
+            max: 90
         },
 
-        dropLocation: {
-            address: {
-                type: String,
-                required: true
-            },
+        lng: {
+            type: Number,
+            required: [true, "Longitude is required"],
+            min: -180,
+            max: 180
+        }
+    },
+    {
+        _id: false
+    }
+);
 
-            latitude: {
-                type: Number
-            },
+// Ride (BACKEND_PLAN.md section 10)
+const rideSchema = new mongoose.Schema(
+    {
+        passengerId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            index: true
+        },
 
-            longitude: {
-                type: Number
-            }
+        driverId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Driver",
+            default: null,
+            index: true
+        },
+
+        vehicleId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Vehicle",
+            default: null
         },
 
         vehicleType: {
             type: String,
-            enum: [
-                "bike",
-                "auto",
-                "sedan",
-                "suv",
-                "hatchback"
-            ],
-            default: "sedan"
+            enum: {
+                values: VEHICLE_TYPES,
+                message: "Vehicle type must be one of: {VALUE}"
+            },
+            required: [true, "Vehicle type is required"]
         },
 
-        status: {
-            type: String,
-            enum: [
-                "requested",
-                "accepted",
-                "started",
-                "completed",
-                "cancelled"
-            ],
-            default: "requested"
+        pickup: {
+            type: pointSchema,
+            required: [true, "Pickup location is required"]
         },
 
-        fare: {
+        destination: {
+            type: pointSchema,
+            required: [true, "Destination is required"]
+        },
+
+        distance: {
             type: Number,
             default: 0,
             min: 0
         },
 
-        distance: {
+        estimatedDuration: {
             type: Number,
-            default: 0
+            default: 0,
+            min: 0
         },
 
-        duration: {
+        estimatedFare: {
             type: Number,
-            default: 0
+            required: true,
+            min: 0
         },
 
-        paymentStatus: {
+        finalFare: {
+            type: Number,
+            default: 0,
+            min: 0
+        },
+
+        status: {
             type: String,
-            enum: [
-                "pending",
-                "paid",
-                "failed",
-                "refunded"
-            ],
-            default: "pending"
+            enum: {
+                values: RIDE_STATUS_LIST,
+                message: "Invalid ride status"
+            },
+            default: RIDE_STATUS.REQUESTED,
+            index: true
+        },
+
+        rejectedBy: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Driver"
+            }
+        ],
+
+        paymentId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Payment",
+            default: null
+        },
+
+        startedAt: {
+            type: Date,
+            default: null
+        },
+
+        completedAt: {
+            type: Date,
+            default: null
+        },
+
+        cancelledAt: {
+            type: Date,
+            default: null
         },
 
         cancelledBy: {
             type: String,
-            enum: [
-                "user",
-                "driver",
-                "admin"
-            ],
+            enum: ["passenger", "driver", "admin"],
             default: null
         },
 
         cancellationReason: {
             type: String,
+            trim: true,
             default: null
         }
     },
@@ -114,5 +149,18 @@ const rideSchema = new mongoose.Schema(
         timestamps: true
     }
 );
+
+// A passenger can only track their own rides; drivers query assigned rides
+rideSchema.index({ passengerId: 1, createdAt: -1 });
+rideSchema.index({ driverId: 1, createdAt: -1 });
+rideSchema.index({ status: 1, vehicleType: 1, createdAt: -1 });
+
+rideSchema.set("toJSON", {
+    virtuals: true,
+    transform: (doc, ret) => {
+        delete ret.__v;
+        return ret;
+    }
+});
 
 module.exports = mongoose.model("Ride", rideSchema);
