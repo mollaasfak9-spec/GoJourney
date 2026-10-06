@@ -1,10 +1,15 @@
+import { BrowserRouter } from 'react-router-dom'
+import { ThemeProvider } from './context/ThemeProvider'
+import AppRoutes from './routes/AppRoutes'
 
 const App = () => {
   return (
-    <div>
-      <h1>hii everyone</h1>
-    </div>
-  );
-};
+    <ThemeProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </ThemeProvider>
+  )
+}
 
-export default App;
+export default App
