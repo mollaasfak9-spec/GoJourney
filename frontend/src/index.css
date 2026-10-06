@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ==========================================
+     Light tokens (default)
+     ========================================== */
+
+  :root {
+    color-scheme: light;
+
+    --color-paper: 246 246 245;
+    --color-surface: 255 255 255;
+    --color-surface-soft: 242 242 241;
+    --color-line: 231 231 229;
+    --color-ink: 0 0 0;
+    --color-ink-soft: 28 28 28;
+    --color-on-ink: 255 255 255;
+    --color-muted: 138 138 135;
+    --color-muted-strong: 94 94 91;
+    --color-live: 31 178 107;
+    --color-live-tint: 228 246 236;
+    --color-live-ink: 14 107 67;
+    --color-pin: 255 90 54;
+    --color-pin-tint: 255 237 232;
+
+    --color-map-road: 255 255 255;
+    --color-map-block: 236 236 234;
+    --color-map-building: 228 228 226;
+    --color-map-park: 220 241 201;
+    --color-map-tree: 199 228 174;
+    --color-map-water: 205 227 245;
+    --color-map-route: 0 0 0;
+    --color-map-fade: 246 246 245;
+    --color-map-car: 201 201 198;
+    --color-map-car-active: 28 28 28;
+
+    --color-status-requested: 138 90 0;
+    --color-status-accepted: 31 79 163;
+    --color-status-driver-arriving: 31 79 163;
+    --color-status-driver-arrived: 14 107 67;
+    --color-status-started: 14 107 67;
+    --color-status-completed: 63 63 61;
+    --color-status-cancelled: 168 50 27;
+
+    --color-shadow: 0 0 0;
+    --shadow-flat-alpha: 0.04;
+    --shadow-button-alpha: 0.12;
+    --shadow-float-alpha: 0.18;
+    --shadow-hero-alpha: 0.25;
+  }
+
+  /* ==========================================
+     Dark tokens
+     ========================================== */
+
+  .dark {
+    color-scheme: dark;
+
+    --color-paper: 10 10 10;
+    --color-surface: 20 20 20;
+    --color-surface-soft: 30 30 30;
+    --color-line: 42 42 42;
+    --color-ink: 250 250 249;
+    --color-ink-soft: 232 232 230;
+    --color-on-ink: 10 10 10;
+    --color-muted: 122 122 119;
+    --color-muted-strong: 170 170 167;
+    --color-live: 46 204 128;
+    --color-live-tint: 18 48 31;
+    --color-live-ink: 110 231 168;
+    --color-pin: 255 107 74;
+    --color-pin-tint: 51 21 13;
+
+    --color-map-road: 38 38 38;
+    --color-map-block: 26 26 26;
+    --color-map-building: 34 34 34;
+    --color-map-park: 29 44 29;
+    --color-map-tree: 40 62 39;
+    --color-map-water: 23 37 51;
+    --color-map-route: 250 250 249;
+    --color-map-fade: 10 10 10;
+    --color-map-car: 58 58 58;
+    --color-map-car-active: 232 232 230;
+
+    --color-status-requested: 233 183 92;
+    --color-status-accepted: 122 168 245;
+    --color-status-driver-arriving: 122 168 245;
+    --color-status-driver-arrived: 110 231 168;
+    --color-status-started: 110 231 168;
+    --color-status-completed: 170 170 167;
+    --color-status-cancelled: 244 138 116;
+
+    --shadow-flat-alpha: 0.4;
+    --shadow-button-alpha: 0.4;
+    --shadow-float-alpha: 0.55;
+    --shadow-hero-alpha: 0.7;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-paper text-ink-soft font-sans antialiased;
+  }
+}
