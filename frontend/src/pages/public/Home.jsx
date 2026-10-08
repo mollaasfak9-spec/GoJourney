@@ -4,13 +4,38 @@ import { ArrowRight, Car, Clock, ShieldCheck, MapPin, Navigation, User } from 'l
 import MapPlaceholder from '../../components/common/MapPlaceholder'
 import ServiceTypeBar from '../../components/ride/ServiceTypeBar'
 import RideCarModal from '../../components/ride/RideCarModal'
-import { AVAILABLE_CARS, VEHICLE_TYPE_LABELS } from '../../constants/cars'
+import { AVAILABLE_BIKES, AVAILABLE_CARS, VEHICLE_TYPE_LABELS } from '../../constants/cars'
 import carPlaceholder from '../../assets/car-placeholder.jpg'
+
+const CHOOSER_VEHICLES = { ride: AVAILABLE_CARS, bike: AVAILABLE_BIKES }
+
+function poolForService(svc) {
+  if (!svc) return null
+  if (CHOOSER_VEHICLES[svc.id]) return CHOOSER_VEHICLES[svc.id]
+  if (svc.serviceId === 'ride') {
+    const filtered = AVAILABLE_CARS.filter((car) => car.vehicleType === svc.vehicleType)
+    return filtered.length ? filtered : AVAILABLE_CARS
+  }
+  if (svc.serviceId === 'bike') return AVAILABLE_BIKES
+  return null
+}
 
 export default function Home() {
   const [service, setService] = useState(null)
   const [rideCarModalOpen, setRideCarModalOpen] = useState(false)
-  const [selectedCar, setSelectedCar] = useState(null)
+  const [selections, setSelections] = useState({})
+
+  const serviceId = service?.id ?? null
+  const chooserVehicles = poolForService(service)
+  const selectedVehicle = serviceId ? selections[serviceId] : null
+
+  function handleServiceSelect(svc) {
+    setService(svc)
+    const pool = poolForService(svc)
+    if (pool) {
+      setSelections((prev) => (prev[svc.id] ? prev : { ...prev, [svc.id]: pool[0] }))
+    }
+  }
 
   return (
     <div className="relative">
@@ -30,61 +55,58 @@ export default function Home() {
               Fast pickups, transparent pricing, and a seamless experience. Book your next ride in seconds.
             </p>
             <ServiceTypeBar
-              onSelect={(svc) => {
-                setService(svc)
-                if (svc && svc.id === 'ride') {
-                  setRideCarModalOpen(true)
-                }
-              }}
+              onSelect={handleServiceSelect}
               className="max-w-xl"
             />
 
-            {selectedCar && (
+            {selectedVehicle && (
               <div className="flex max-w-xl items-center gap-3 rounded-2xl border border-line bg-surface p-3">
                 <img
-                  src={selectedCar.image || carPlaceholder}
-                  alt={`${selectedCar.brand} ${selectedCar.model}`}
-                  className="h-14 w-20 shrink-0 rounded-xl border border-line object-cover"
+                  src={selectedVehicle.image || carPlaceholder}
+                  alt={`${selectedVehicle.brand} ${selectedVehicle.model}`}
+                  className={`h-14 w-20 shrink-0 rounded-xl border border-line ${
+                    selectedVehicle.imageFit === 'contain' ? 'bg-surface object-contain p-1' : 'object-cover'
+                  }`}
                   onError={(e) => {
                     e.currentTarget.src = carPlaceholder
                   }}
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-ink">
-                    {selectedCar.brand} {selectedCar.model}
+                    {selectedVehicle.brand} {selectedVehicle.model}
                   </p>
-                  {selectedCar.driverName && (
+                  {selectedVehicle.driverName && (
                     <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-muted-strong">
                       <User className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                      <span className="truncate">{selectedCar.driverName}</span>
+                      <span className="truncate">{selectedVehicle.driverName}</span>
                     </p>
                   )}
                   <p className="mt-0.5 text-xs text-muted">
-                    {VEHICLE_TYPE_LABELS[selectedCar.vehicleType] || selectedCar.vehicleType} •{' '}
-                    {selectedCar.color} • {selectedCar.seats} seats
+                    {VEHICLE_TYPE_LABELS[selectedVehicle.vehicleType] || selectedVehicle.vehicleType} •{' '}
+                    {selectedVehicle.color} • {selectedVehicle.seats} seat
+                    {selectedVehicle.seats === 1 ? '' : 's'}
                   </p>
-                  {selectedCar.distance && (
-                    <p className="mt-0.5 text-xs text-muted">Distance: {selectedCar.distance}</p>
+                  {selectedVehicle.distance && (
+                    <p className="mt-0.5 text-xs text-muted">Distance: {selectedVehicle.distance}</p>
                   )}
                   <span className="mt-1.5 inline-flex items-center rounded-md border-2 border-ink/80 bg-surface px-2.5 py-1 font-mono text-xs font-semibold tracking-[0.18em] text-ink">
-                    {selectedCar.vehicleNumber}
+                    {selectedVehicle.vehicleNumber}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setRideCarModalOpen(true)}
-                  className="shrink-0 rounded-full border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2"
-                >
-                  Change
-                </button>
+                {chooserVehicles && (
+                  <button
+                    type="button"
+                    onClick={() => setRideCarModalOpen(true)}
+                    className="shrink-0 rounded-full border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2"
+                  >
+                    Change
+                  </button>
+                )}
               </div>
             )}
             <div className="flex flex-wrap items-center gap-3">
               <Link to="/register" className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-medium text-on-ink hover:bg-ink/90 transition-colors shadow-button">
                 {service ? service.cta : 'Get started'} <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link to="/login" className="inline-flex items-center gap-2 rounded-full border border-line px-6 py-3 text-sm font-medium text-ink-soft hover:bg-surface-soft transition-colors">
-                Sign in
               </Link>
             </div>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl">
@@ -276,12 +298,13 @@ export default function Home() {
       </section>
 
       <RideCarModal
-        isOpen={rideCarModalOpen}
+        isOpen={rideCarModalOpen && Boolean(chooserVehicles)}
         onClose={() => setRideCarModalOpen(false)}
-        cars={AVAILABLE_CARS}
-        selectedCarId={selectedCar?.id}
-        onSelect={(car) => {
-          setSelectedCar(car)
+        cars={chooserVehicles ?? []}
+        title={serviceId === 'bike' || service?.serviceId === 'bike' ? 'Choose your bike' : 'Choose your ride car'}
+        selectedCarId={selectedVehicle?.id}
+        onSelect={(vehicle) => {
+          setSelections((prev) => ({ ...prev, [serviceId]: vehicle }))
           setRideCarModalOpen(false)
         }}
       />
