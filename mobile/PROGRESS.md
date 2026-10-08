@@ -80,6 +80,18 @@ The user asked to proceed without questions, so these are recorded as assumption
 - **API keys** — the MVP uses only **free, keyless** options (OpenStreetMap tiles via `react-native-maps`, Nominatim geocoding). No key required.
 - **Test accounts** — the app can register accounts itself; no seeded credentials required. (Optional: owner may create an admin via the backend.)
 
+### Phase 0 live evidence
+
+- Installed backend dependencies (`backend/npm install`).
+- Ran the backend contract suite against a real in-memory MongoDB:
+  **173 checks passed, 0 failed** (exit code 0). This is the authoritative
+  live confirmation that the API behaves as `API_CONTRACT.md` documents
+  (health, auth, rides lifecycle, payments, ratings, driver lists, admin).
+- Note: `npm test` in `backend/` can fail on a cold machine because
+  `mongodb-memory-server` allows only **10 s** for the mongod first start, while
+  the first Windows start takes longer. Running the same suite through a harness
+  that passes `instance.startupTimeout` fixes it — no backend change needed.
+
 ### Running the backend (for on-device testing)
 
 The API needs a MongoDB. Two paths:
