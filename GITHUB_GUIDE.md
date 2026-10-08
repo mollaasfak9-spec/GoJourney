@@ -144,7 +144,7 @@ If your commit message needs a paragraph to explain, the commit is doing too muc
 
 ```bash
 git add .                             # stage everything
-git add src/routes/auth.routes.js    # or stage just one file
+git add backend/src/routes/auth.routes.js    # or stage just one file
 git status                            # confirm what is staged
 git commit -m "feat: add user registration API"
 ```
@@ -252,7 +252,7 @@ Fix it by hand:
 3. Stage and push:
 
 ```bash
-git add src/routes/ride.routes.js
+git add backend/src/routes/ride.routes.js
 git commit
 git push
 ```
@@ -262,8 +262,8 @@ Do not blindly accept one side. Read both and make sure you did not delete someo
 If a file conflicts so badly you cannot tell what happened, take theirs, then reapply yours:
 
 ```bash
-git checkout --theirs src/routes/ride.routes.js
-git add src/routes/ride.routes.js
+git checkout --theirs backend/src/routes/ride.routes.js
+git add backend/src/routes/ride.routes.js
 git commit
 ```
 
@@ -317,12 +317,13 @@ If a secret ever gets committed, deleting the file in a later commit is not enou
 # 8. Files that conflict a lot
 
 ```text
-package.json
-package-lock.json
-App.jsx
-AppRoutes.jsx
+frontend/package.json
+frontend/package-lock.json
+backend/package.json
+frontend/src/App.jsx
+frontend/src/routes/AppRoutes.jsx
 README.md
-DESIGN.md
+frontend/DESIGN.md
 ```
 
 Two people editing these at the same time will collide. Communicate first, keep the change focused, and pull `develop` before you start.

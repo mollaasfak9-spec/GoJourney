@@ -45,7 +45,9 @@ Real-time
 
 ---
 
-# 1. Suggested Stack
+# 1. Stack
+
+Installed in `backend/package.json`:
 
 ```text
 Node.js
@@ -54,78 +56,119 @@ MongoDB
 Mongoose
 JWT / secure cookie authentication
 bcrypt
+cookie-parser
 dotenv
 cors
 helmet
 morgan
-Socket.IO (later)
+express-rate-limit
 ```
 
-Optional:
+Dev dependencies:
+
+```text
+nodemon
+supertest
+mongodb-memory-server
+```
+
+Optional, add only when required:
 
 ```text
 Zod/Joi
-express-rate-limit
 Cloudinary
 Razorpay/Stripe
+Socket.IO (real-time phase)
 ```
 
 Only add packages when required.
 
 ---
 
-# 2. Backend Folder Structure
+# 2. Backend Folder Structure (current)
 
 ```text
-src/
+backend/
 │
-├── config/
-│   ├── db.js
-│   └── env.js
+├── BACKEND_PLAN.md
+├── .env.example
+├── package.json
 │
-├── controllers/
-│   ├── auth.controller.js
-│   ├── user.controller.js
-│   ├── driver.controller.js
-│   ├── ride.controller.js
-│   ├── payment.controller.js
-│   └── admin.controller.js
+├── tests/
+│   ├── run.js
+│   └── smoke.test.js
 │
-├── models/
-│   ├── User.js
-│   ├── Driver.js
-│   ├── Ride.js
-│   ├── Vehicle.js
-│   ├── Payment.js
-│   └── Rating.js
-│
-├── routes/
-│   ├── auth.routes.js
-│   ├── user.routes.js
-│   ├── driver.routes.js
-│   ├── ride.routes.js
-│   ├── payment.routes.js
-│   └── admin.routes.js
-│
-├── middleware/
-│   ├── auth.middleware.js
-│   ├── role.middleware.js
-│   ├── error.middleware.js
-│   └── validation.middleware.js
-│
-├── services/
-│   ├── fare.service.js
-│   ├── ride.service.js
-│   └── driver.service.js
-│
-├── validators/
-│
-├── utils/
-│
-├── sockets/
-│
-├── app.js
-└── server.js
+└── src/
+    │
+    ├── config/
+    │   ├── db.js
+    │   └── env.js
+    │
+    ├── controllers/
+    │   ├── auth.controller.js
+    │   ├── user.controller.js
+    │   ├── driver.controller.js
+    │   ├── ride.controller.js
+    │   ├── payment.controller.js
+    │   └── admin.controller.js
+    │
+    ├── models/
+    │   ├── User.js
+    │   ├── Driver.js
+    │   ├── Ride.js
+    │   ├── Vehicle.js
+    │   ├── Payment.js
+    │   └── Rating.js
+    │
+    ├── routes/
+    │   ├── auth.routes.js
+    │   ├── user.routes.js
+    │   ├── driver.routes.js
+    │   ├── ride.routes.js
+    │   ├── payment.routes.js
+    │   └── admin.routes.js
+    │
+    ├── middleware/
+    │   ├── auth.middleware.js
+    │   ├── role.middleware.js
+    │   ├── error.middleware.js
+    │   ├── validation.middleware.js
+    │   └── rateLimit.middleware.js
+    │
+    ├── services/
+    │   ├── fare.service.js
+    │   ├── ride.service.js
+    │   └── driver.service.js
+    │
+    ├── validators/
+    │   ├── helpers.js
+    │   ├── auth.validator.js
+    │   ├── user.validator.js
+    │   ├── driver.validator.js
+    │   ├── ride.validator.js
+    │   ├── payment.validator.js
+    │   └── admin.validator.js
+    │
+    ├── utils/
+    │   ├── ApiError.js
+    │   ├── asyncHandler.js
+    │   ├── constants.js
+    │   ├── geo.js
+    │   ├── pagination.js
+    │   └── response.js
+    │
+    ├── app.js
+    └── server.js
+```
+
+Planned: `src/sockets/` for Socket.IO in the real-time phase.
+
+Run it:
+
+```bash
+cd backend
+npm run dev      # nodemon src/server.js
+npm test         # node tests/run.js
 ```
 
 ---

@@ -35,24 +35,27 @@ Do not wait for the backend team to finish before starting frontend work.
 
 ---
 
-# 1. Suggested Frontend Stack
+# 1. Frontend Stack
+
+Installed in `frontend/package.json`:
 
 ```text
-React
+React 19
 Vite
 React Router
 Axios
 Tailwind CSS
 Lucide React
-React Hook Form
-Zod
 ```
 
-Optional later:
+Planned — add only when a feature needs them:
 
 ```text
+React Hook Form
+Zod
 Socket.IO Client
 TanStack Query
+GSAP / Motion / Lenis   (see DESIGN.md section 11)
 ```
 
 Do not add libraries just because they are popular. Add them when the project actually needs them.
@@ -61,86 +64,89 @@ Do not add libraries just because they are popular. Add them when the project ac
 
 # 2. Initial Setup
 
+The app already lives in `frontend/` (React + Vite + Tailwind):
+
 ```bash
-npm create vite@latest ridex-frontend -- --template react
-cd ridex-frontend
+cd frontend
 npm install
 npm run dev
 ```
 
-Install routing:
+Already installed — do not reinstall:
 
 ```bash
-npm install react-router-dom
+npm install react-router-dom   # routing
+npm install axios              # HTTP client
+npm install lucide-react       # icons
 ```
 
-Install HTTP client:
-
-```bash
-npm install axios
-```
-
-Install icons:
-
-```bash
-npm install lucide-react
-```
-
-Install Tailwind according to the current official Tailwind/Vite setup used by your team.
+Tailwind is configured through `tailwind.config.js` and `postcss.config.js` in `frontend/`.
 
 ---
 
 # 3. Frontend Folder Structure
 
-Target structure:
+Current state of `frontend/src/`:
 
 ```text
 src/
 │
-├── assets/
+├── assets/            car-front.jpg, car-placeholder.jpg, hero.png, react.svg, vite.svg
 │
 ├── components/
-│   ├── common/
-│   ├── layout/
-│   ├── auth/
-│   ├── ride/
-│   ├── driver/
-│   └── admin/
+│   ├── common/        Footer.jsx, MapPlaceholder.jsx, Modal.jsx, ThemeToggle.jsx
+│   ├── layout/        PublicNavbar.jsx
+│   └── ride/          RideCarModal.jsx, ServiceTypeBar.jsx
+│
+├── constants/         cars.js, services.js
+│
+├── context/           themeContext.js, ThemeProvider.jsx
+│
+├── hooks/             useTheme.js
+│
+├── layouts/           PublicLayout.jsx
 │
 ├── pages/
-│   ├── public/
-│   ├── auth/
-│   ├── passenger/
-│   ├── driver/
-│   └── admin/
+│   ├── public/        Home.jsx, About.jsx, Contact.jsx
+│   └── auth/          Login.jsx, Register.jsx
 │
-├── layouts/
-│   ├── PublicLayout.jsx
-│   ├── PassengerLayout.jsx
-│   ├── DriverLayout.jsx
-│   └── AdminLayout.jsx
-│
-├── routes/
-│   └── AppRoutes.jsx
-│
-├── services/
-│   ├── api.js
-│   ├── authApi.js
-│   ├── rideApi.js
-│   ├── driverApi.js
-│   └── adminApi.js
-│
-├── context/
-│   └── AuthContext.jsx
-│
-├── hooks/
-│
-├── utils/
-│
-├── constants/
+├── routes/            AppRoutes.jsx
 │
 ├── App.jsx
+├── App.css
+├── index.css
 └── main.jsx
+```
+
+Planned — create these as the matching phase is reached:
+
+```text
+components/
+    auth/
+    driver/
+    admin/
+
+pages/
+    passenger/
+    driver/
+    admin/
+
+layouts/
+    PassengerLayout.jsx
+    DriverLayout.jsx
+    AdminLayout.jsx
+
+services/
+    api.js
+    authApi.js
+    rideApi.js
+    driverApi.js
+    adminApi.js
+
+context/
+    AuthContext.jsx
+
+utils/
 ```
 
 ---
@@ -214,25 +220,23 @@ At this stage:
 
 # 6. Build Routing
 
-Create:
+Exists: `src/routes/AppRoutes.jsx`
 
-```text
-src/routes/AppRoutes.jsx
-```
-
-Start with:
+Public routes are wired (Home, About, Contact inside `PublicLayout`, plus Login and Register):
 
 ```jsx
 <Routes>
-  <Route path="/" element={<Home />} />
-  <Route path="/about" element={<About />} />
-  <Route path="/contact" element={<Contact />} />
+  <Route element={<PublicLayout />}>
+    <Route path="/" element={<Home />} />
+    <Route path="/about" element={<About />} />
+    <Route path="/contact" element={<Contact />} />
+  </Route>
   <Route path="/login" element={<Login />} />
   <Route path="/register" element={<Register />} />
 </Routes>
 ```
 
-Then add passenger, driver, and admin routes.
+Next: add passenger, driver, and admin routes.
 
 ---
 
@@ -240,13 +244,11 @@ Then add passenger, driver, and admin routes.
 
 Do not duplicate navigation bars on every page.
 
-Create:
-
 ```text
-PublicLayout
-PassengerLayout
-DriverLayout
-AdminLayout
+PublicLayout      ✅ exists (src/layouts/PublicLayout.jsx)
+PassengerLayout   planned
+DriverLayout      planned
+AdminLayout       planned
 ```
 
 Example:
@@ -541,7 +543,7 @@ Do not put secrets in frontend source code.
 
 # 18. Axios Setup
 
-Create:
+Create (not in the repo yet):
 
 ```text
 src/services/api.js
@@ -581,7 +583,7 @@ not:
 
 Do not put every request inside components.
 
-Use:
+Create these next to `src/services/api.js` (folder does not exist yet):
 
 ```text
 authApi.js
