@@ -42,23 +42,41 @@ React
 
 ---
 
-# 2. Repository Strategy
-
-Recommended:
+# 2. Repository Structure (current)
 
 ```text
-ridex/
-│
-├── frontend/
-├── backend/
-├── docs/
-│   ├── FRONTEND_PLAN.md
-│   ├── BACKEND_PLAN.md
-│   └── GITHUB_GUIDE.md
+RideX_AXION/
 │
 ├── README.md
-└── .gitignore
+├── PLAN.md
+├── GITHUB_GUIDE.md
+├── .gitignore
+│
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── ui_reference/
+│   ├── DESIGN.md
+│   ├── FRONTEND_PLAN.md
+│   ├── PAGE_PLAN.md
+│   ├── README.md
+│   └── package.json
+│
+└── backend/
+    ├── src/
+    ├── tests/
+    ├── BACKEND_PLAN.md
+    ├── .env.example
+    └── package.json
 ```
+
+Docs live next to the code they describe:
+
+| Doc | Folder |
+| --- | --- |
+| `README.md`, `PLAN.md`, `GITHUB_GUIDE.md` | root (project-wide) |
+| `DESIGN.md`, `FRONTEND_PLAN.md`, `PAGE_PLAN.md`, `README.md` | `frontend/` |
+| `BACKEND_PLAN.md` | `backend/` |
 
 One repository is easier for a college team.
 
@@ -68,18 +86,38 @@ One repository is easier for a college team.
 
 ```text
 frontend/
+├── DESIGN.md
+├── FRONTEND_PLAN.md
+├── PAGE_PLAN.md
+├── README.md
+├── index.html
+├── package.json
+├── tailwind.config.js
+├── vite.config.js
+├── public/
+├── ui_reference/
 └── src/
+    ├── App.jsx
+    ├── App.css
+    ├── main.jsx
+    ├── index.css
     ├── assets/
     ├── components/
+    │   ├── common/      Footer, MapPlaceholder, Modal, ThemeToggle
+    │   ├── layout/      PublicNavbar
+    │   └── ride/        RideCarModal, ServiceTypeBar
+    ├── constants/       cars.js, services.js
+    ├── context/         themeContext.js, ThemeProvider.jsx
+    ├── hooks/           useTheme.js
+    ├── layouts/         PublicLayout.jsx
     ├── pages/
-    ├── layouts/
-    ├── routes/
-    ├── services/
-    ├── context/
-    ├── hooks/
-    ├── utils/
-    └── constants/
+    │   ├── public/      Home, About, Contact
+    │   └── auth/        Login, Register
+    └── routes/          AppRoutes.jsx
 ```
+
+Planned, not created yet: `components/auth|driver|admin`, `pages/passenger|driver|admin`,
+`layouts/PassengerLayout|DriverLayout|AdminLayout`, `services/`, `utils/`.
 
 ---
 
@@ -87,19 +125,26 @@ frontend/
 
 ```text
 backend/
+├── BACKEND_PLAN.md
+├── .env.example
+├── package.json
+├── tests/
+│   ├── run.js
+│   └── smoke.test.js
 └── src/
-    ├── config/
-    ├── controllers/
-    ├── models/
-    ├── routes/
-    ├── middleware/
-    ├── services/
-    ├── validators/
-    ├── utils/
-    ├── sockets/
     ├── app.js
-    └── server.js
+    ├── server.js
+    ├── config/         db.js, env.js
+    ├── controllers/    auth, user, driver, ride, payment, admin
+    ├── middleware/     auth, role, error, validation, rateLimit
+    ├── models/         User, Driver, Vehicle, Ride, Payment, Rating
+    ├── routes/         auth, user, driver, ride, payment, admin
+    ├── services/       fare, ride, driver
+    ├── utils/          ApiError, asyncHandler, constants, geo, pagination, response
+    └── validators/     auth, user, driver, ride, payment, admin, helpers
 ```
+
+`sockets/` is planned for the real-time phase and does not exist yet.
 
 ---
 

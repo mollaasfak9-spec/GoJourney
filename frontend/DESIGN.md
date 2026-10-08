@@ -3,7 +3,7 @@
 > The visual and interaction source of truth for RideX.
 > Read this before building or changing any UI. It describes what the product looks like and how it behaves. It does not contain implementation code beyond design tokens.
 
-Related docs: `PROJECT_PLAN.md` (what we build), `PAGE_PLAN.md` (what each page contains), `FRONTEND_PLAN.md` (how we build it).
+Related docs: `../PLAN.md` (what we build), `PAGE_PLAN.md` (what each page contains), `FRONTEND_PLAN.md` (how we build it).
 
 ---
 
@@ -782,7 +782,7 @@ All loops stop when the tab is hidden, in reduced-motion mode, and when scrolled
 
 ### 11.7 Implementation notes
 
-Use one shared file, `src/motion/`, so every animation uses the same tokens:
+Use one shared file, `src/motion/` (not created yet — build it when the motion work starts), so every animation uses the same tokens:
 
 ```text
 src/motion/
@@ -914,14 +914,14 @@ Keep the product clean and finishable. Do not add:
 - Fake large-number statistics
 - Scroll-jacking, pinned-section tricks, heavy parallax, custom cursors, page preloaders, or confetti
 - Any animation library beyond the four in section 11.1, or scattered one-off animations that ignore the motion tokens
-- Chat, in-app voice calls, surge-pricing visuals, coupons, or social features (see `PROJECT_PLAN.md` section 34)
+- Chat, in-app voice calls, surge-pricing visuals, coupons, or social features (see `../PLAN.md` section 34)
 - Separate one-off versions of Button, Card, Input, or Badge on any page
 
 ---
 
 ## 17. Rules for anyone building the UI (including AI tools)
 
-1. Read `PROJECT_PLAN.md`, `PAGE_PLAN.md`, and this file first.
+1. Read `../PLAN.md`, `PAGE_PLAN.md`, and this file first.
 2. Inspect the existing code. Reuse existing components and tokens before creating anything new.
 3. Use only the tokens in section 15. Do not introduce new hex values, radii, or shadows without updating this document.
 4. Follow the layout sketches here and in `PAGE_PLAN.md`. Do not redesign navigation.

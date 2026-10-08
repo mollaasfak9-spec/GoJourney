@@ -239,65 +239,82 @@ Cloudinary
 
 ---
 
-# 7. Repository Structure
+# 7. Repository Structure (current)
 
 ```text
-ridex/
+RideX_AXION/
 │
 ├── README.md
-│
-├── docs/
-│   ├── PROJECT_PLAN.md
-│   ├── DESIGN.md
-│   ├── FRONTEND_PLAN.md
-│   ├── BACKEND_PLAN.md
-│   ├── API_SPEC.md
-│   ├── DATABASE_DESIGN.md
-│   ├── DEVELOPMENT_ROADMAP.md
-│   └── GITHUB_GUIDE.md
+├── PLAN.md
+├── GITHUB_GUIDE.md
+├── .gitignore
 │
 ├── frontend/
-│   ├── public/
 │   ├── src/
+│   ├── public/
+│   ├── ui_reference/
+│   ├── DESIGN.md
+│   ├── FRONTEND_PLAN.md
+│   ├── PAGE_PLAN.md
+│   ├── README.md
 │   ├── package.json
-│   └── README.md
+│   └── vite.config.js
 │
 └── backend/
     ├── src/
-    ├── package.json
-    └── README.md
+    ├── tests/
+    ├── BACKEND_PLAN.md
+    ├── .env.example
+    └── package.json
 ```
+
+Documentation lives beside the code it describes: project-wide docs at the root,
+frontend docs in `frontend/`, backend docs in `backend/`.
 
 ---
 
 # 8. Frontend Architecture
 
-```text
-frontend/src/
+Current state of `frontend/src/`:
 
+```text
+assets/
 components/
-    common/
-    layout/
+    common/      Footer, MapPlaceholder, Modal, ThemeToggle
+    layout/      PublicNavbar
+    ride/        RideCarModal, ServiceTypeBar
+constants/       cars.js, services.js
+context/         themeContext.js, ThemeProvider.jsx
+hooks/           useTheme.js
+layouts/         PublicLayout.jsx
+pages/
+    public/      Home, About, Contact
+    auth/        Login, Register
+routes/          AppRoutes.jsx
+
+App.jsx
+App.css
+index.css
+main.jsx
+```
+
+Planned — create as the matching phases are built:
+
+```text
+components/
     auth/
-    ride/
     driver/
     admin/
 
 pages/
-    public/
-    auth/
     passenger/
     driver/
     admin/
 
 layouts/
-    PublicLayout
     PassengerLayout
     DriverLayout
     AdminLayout
-
-routes/
-    AppRoutes
 
 services/
     api
@@ -309,31 +326,35 @@ services/
 context/
     AuthContext
 
-hooks/
 utils/
-constants/
 ```
 
 ---
 
 # 9. Backend Architecture
 
+Current state:
+
 ```text
-backend/src/
+backend/
+├── tests/
+│   ├── run.js
+│   └── smoke.test.js
+└── src/
+    config/        db.js, env.js
+    controllers/   auth, user, driver, ride, payment, admin
+    middleware/    auth, role, error, validation, rateLimit
+    models/        User, Driver, Vehicle, Ride, Payment, Rating
+    routes/        auth, user, driver, ride, payment, admin
+    services/      fare, ride, driver
+    utils/         ApiError, asyncHandler, constants, geo, pagination, response
+    validators/    auth, user, driver, ride, payment, admin, helpers
 
-config/
-controllers/
-models/
-routes/
-middleware/
-services/
-validators/
-utils/
-sockets/
-
-app.js
-server.js
+    app.js
+    server.js
 ```
+
+Planned: `sockets/` (Socket.IO) in the real-time phase.
 
 ### Responsibility
 
@@ -643,7 +664,7 @@ Different styles on every page
 The detailed visual system belongs in:
 
 ```text
-docs/DESIGN.md
+frontend/DESIGN.md
 ```
 
 It should define:
@@ -672,7 +693,7 @@ Error states
 
 # 19. Design.md Generation Rules
 
-When generating `DESIGN.md`, it should describe the product visually and functionally.
+`frontend/DESIGN.md` exists and is the source of truth. When updating it, it should describe the product visually and functionally.
 
 It should answer:
 
@@ -708,9 +729,9 @@ It should NOT contain huge implementation code.
 
 If an AI coding/design tool is used, it must:
 
-1. Read `PROJECT_PLAN.md`
-2. Read `DESIGN.md`
-3. Read `FRONTEND_PLAN.md`
+1. Read `PLAN.md`
+2. Read `frontend/DESIGN.md`
+3. Read `frontend/FRONTEND_PLAN.md`
 4. Inspect the existing code
 5. Reuse existing components
 6. Follow existing design tokens
@@ -1104,32 +1125,37 @@ Passenger history
 
 # 32. Documentation Strategy
 
-The project documentation should remain separated by responsibility.
+The project documentation stays separated by responsibility. Every doc lives in the folder it belongs to:
 
 ```text
-PROJECT_PLAN.md
-→ What we are building and why
+README.md
+→ Project overview, architecture, quick start
 
-DESIGN.md
-→ What the product should look and feel like
-
-FRONTEND_PLAN.md
-→ How frontend developers should implement it
-
-BACKEND_PLAN.md
-→ How backend developers should implement it
-
-API_SPEC.md
-→ Exact API contract
-
-DATABASE_DESIGN.md
-→ Database structure
-
-DEVELOPMENT_ROADMAP.md
-→ What to build first/next
+PLAN.md
+→ What we are building and why (this file)
 
 GITHUB_GUIDE.md
 → How the team collaborates with Git
+
+frontend/DESIGN.md
+→ What the product should look and feel like
+
+frontend/PAGE_PLAN.md
+→ What each page contains
+
+frontend/FRONTEND_PLAN.md
+→ How frontend developers should implement it
+
+backend/BACKEND_PLAN.md
+→ How backend developers should implement it
+```
+
+Planned, not written yet:
+
+```text
+API_SPEC.md            → Exact API contract
+DATABASE_DESIGN.md     → Database structure
+DEVELOPMENT_ROADMAP.md → What to build first/next
 ```
 
 This prevents one giant documentation file from becoming impossible to maintain.
