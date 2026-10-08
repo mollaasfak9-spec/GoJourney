@@ -72,6 +72,29 @@
 3. Auth endpoints are rate-limited to 20 requests / 15 min (300 / 15 min globally). The app must not retry auth aggressively.
 4. Fare is **always** computed by the backend (`POST /rides/fare-estimate`); the app never calculates it.
 
+### DESIGN.md summary (≤ 20 lines)
+
+1. Two first-class themes (dark + light); user can pick System/Light/Dark; choice persists.
+2. Accent is signal green `#22E55B` for the "current" thing only. Dark primary buttons = green; light primary buttons = ink navy `#0B1020`.
+3. Signature component: the **paired location card** — two pill inputs in one `surfaceRaised` rounded container with a swap button on the seam. Appears on Home, Book, Ride.
+4. Font: **Plus Jakarta Sans** (400/500/600/700) via `@expo-google-fonts/plus-jakarta-sans`; 10 type styles from `display` 36/700 down to `caption` 12/500.
+5. Spacing on a 4-pt grid (4…48); screen padding 20; sectional gap 24. Radii sm12/md16/lg24/xl32/pill999.
+6. Elevation: dark = no shadows (use `surface`/`surfaceRaised` layers); light = one soft shadow `0 8 24` at 8% ink.
+7. Icons: `lucide-react-native`, stroke 2, inside 48 circles. Vehicle types shown: **Bike, Auto, Car**.
+8. Motion via `react-native-reanimated`: press scale 0.97 (120 ms), sheet spring ~320 ms, status cross-fade 250 ms, pulse ring 1600 ms; respect Reduce Motion.
+9. Layout shell: safe areas everywhere; status bar follows theme; map screens full-bleed with floating top bar + bottom sheet; content screens padded with a large `h1`.
+10. Bottom sheet: top radius 32, drag handle 40×4, snap points peek/half/full.
+11. Components (single style each): Button (primary/secondary/ghost/danger, h56 pill), IconButton, Input, Location pair, Segmented control, Vehicle card, Driver card, Status banner, Slide-to-action, Status badge, Stat block, Progress bar, Route timeline, Ride card, Bottom tab bar, Top bar, Modal, Toast, Skeleton/Empty/Error.
+12. Ride status → colour mapping in §3.4 (requested=warning, accepted/arriving/arrived/completed=accent, started=info, cancelled=danger); never colour-only.
+13. Screens: Splash/Onboarding, Login, Register, Passenger Home, Book, Choose vehicle, Searching, Driver on the way, Driver arrived, In progress, Completed, Rides history, Ride detail, Profile; Driver Home, Incoming request, Driver active ride, Earnings, Vehicle.
+14. Every data screen must have Loading / Success / Empty / Error states; plus offline banner, permission-denied card, session-expired toast, 409/422 toast.
+15. Copy: sentence case, short, active, same words everywhere; ₹ currency; "3 min" times.
+16. Responsive: 360–430 dp first; <360 shrink; tablets max content width 520; portrait lock.
+17. Accessibility: 4.5:1 contrast (green text on white uses `accentText` `#0A8A35`), ≥44 targets, labels on every control, Reduce Motion.
+18. "Do Not": no extra accents, no gradients (except the light-theme dark info panel), no heavy shadows/glassmorphism, no ALL CAPS, one primary button per screen, no custom component variants, no colourful map pins, no auto-play decoration, no text <12 px, no chat/package/coupons/surge.
+19. Token file shape is given in §17 (JS in `src/theme/tokens.js`).
+20. Missing pieces to note: vehicle images are placeholders; onboarding illustrations minimal; no chat in MVP (show "Call driver" only).
+
 ### Assumptions (owner-supplied values deferred — see MOBILE_PLAN §12)
 
 The user asked to proceed without questions, so these are recorded as assumptions and will be confirmed when first needed:
