@@ -11,14 +11,14 @@ function NumberPlate({ value }) {
   )
 }
 
-export default function RideCarModal({ isOpen, onClose, cars = [], selectedCarId, onSelect }) {
+export default function RideCarModal({ isOpen, onClose, cars = [], selectedCarId, onSelect, title = 'Choose your ride car' }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-md">
       <div className="flex flex-col gap-4">
         <div className="pr-8">
-          <h3 className="text-lg font-medium text-ink">Choose your ride car</h3>
+          <h3 className="text-lg font-medium text-ink">{title}</h3>
           <p className="mt-1 text-sm text-muted">
-            Pick a car to see its photo and number plate.
+            Pick a vehicle to see its photo and number plate.
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export default function RideCarModal({ isOpen, onClose, cars = [], selectedCarId
                     <img
                       src={image}
                       alt={`${car.brand} ${car.model}`}
-                      className="h-full w-full object-cover"
+                      className={`h-full w-full ${car.imageFit === 'contain' ? 'object-contain p-1' : 'object-cover'}`}
                       loading="lazy"
                       onError={(e) => {
                         e.currentTarget.src = carPlaceholder
@@ -63,7 +63,7 @@ export default function RideCarModal({ isOpen, onClose, cars = [], selectedCarId
                     )}
                     <span className="truncate text-xs text-muted">
                       {VEHICLE_TYPE_LABELS[car.vehicleType] || car.vehicleType} • {car.color} •{' '}
-                      {car.seats} seats
+                      {car.seats} seat{car.seats === 1 ? '' : 's'}
                     </span>
                     {car.distance && (
                       <span className="truncate text-xs text-muted">Distance: {car.distance}</span>

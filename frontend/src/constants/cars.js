@@ -1,4 +1,5 @@
 import carFront from '../assets/car-front.jpg'
+import bikeImage from '../assets/service-bike.svg'
 
 export const VEHICLE_TYPE_LABELS = {
   bike: 'Bike',
@@ -60,5 +61,50 @@ export const AVAILABLE_CARS = [
     fare: '12',
     distance: '1.2 km',
     image: carFront,
+  },
+]
+
+export const AVAILABLE_BIKES = [
+  {
+    id: 'bike-1',
+    vehicleNumber: 'WB-06-MN-3344',
+    driverName: 'Suman Roy',
+    vehicleType: 'bike',
+    brand: 'Honda',
+    model: 'Activa 6G',
+    color: 'Black',
+    seats: 1,
+    fare: '9',
+    distance: '1.1 km',
+    image: bikeImage,
+    imageFit: 'contain',
+  },
+  {
+    id: 'bike-2',
+    vehicleNumber: 'WB-02-KL-8899',
+    driverName: 'Imran Sheikh',
+    vehicleType: 'bike',
+    brand: 'TVS',
+    model: 'Jupiter',
+    color: 'Blue',
+    seats: 1,
+    fare: '8',
+    distance: '0.9 km',
+    image: bikeImage,
+    imageFit: 'contain',
+  },
+  {
+    id: 'bike-3',
+    vehicleNumber: 'WB-03-PR-5566',
+    driverName: 'Puja Mondal',
+    vehicleType: 'bike',
+    brand: 'Bajaj',
+    model: 'Pulsar 150',
+    color: 'Grey',
+    seats: 1,
+    fare: '11',
+    distance: '1.6 km',
+    image: bikeImage,
+    imageFit: 'contain',
   },
 ]
