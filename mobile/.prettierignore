@@ -1,0 +1,16 @@
+node_modules
+.expo
+dist
+web-build
+coverage
+android
+ios
+assets
+*.md
+*.png
+*.jpg
+*.jpeg
+*.svg
+package-lock.json
+.env
+.env.example

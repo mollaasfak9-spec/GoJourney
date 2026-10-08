@@ -5,8 +5,8 @@
 > Source of truth for the API: `mobile/API_CONTRACT.md` (mirrors `backend/src`).
 
 **App:** RideX Mobile — React Native (Expo, managed workflow), **JavaScript only** (no TypeScript).
-**Current phase:** `Phase 0 — Preflight & contract audit` ✅ complete → Phase 1 next.
-**Last updated:** Phase 0.
+**Current phase:** `Phase 0 — Preflight & contract audit` ✅ → Phase 1 ✅ done → Phase 2 next.
+**Last updated:** Phase 1.
 
 ---
 
@@ -15,7 +15,7 @@
 | # | Phase | Status | Branch | Notes |
 |---|-------|--------|--------|-------|
 | 0 | Preflight & contract audit | ✅ done | `docs/mobile-api-contract` | `API_CONTRACT.md`, this file, env report |
-| 1 | Project scaffold & tooling | ⬜ next | `chore/mobile-scaffold` | Expo app, lint, format, jest, folder structure |
+| 1 | Project scaffold & tooling | ✅ done | `chore/mobile-scaffold` | Expo SDK 57 app, lint/format/jest/doctor gates |
 | 2 | Design system & theme | ⬜ | | DESIGN.md tokens, light/dark |
 | 3 | Core UI components | ⬜ | | |
 | 4 | Auth screens & session | ⬜ | | |
@@ -128,3 +128,53 @@ Then `backend/.env` needs `MONGODB_URI` + `JWT_SECRET` (see `backend/.env.exampl
 ## Backend change requests
 
 _None._ (See `API_CONTRACT.md` §10.)
+
+---
+
+## Phase 1 — Scaffold, Tooling, Quality Gates
+
+### What was done
+
+- Created the Expo app (SDK **57**, React Native **0.86**, React **19.2**) with
+  `npx create-expo-app --template blank` (JavaScript) and moved it into `mobile/`.
+- Installed the full base dependency set (MOBILE_PLAN §2) with `npx expo install`
+  so every native module matches the SDK: navigation (native-stack + bottom-tabs),
+  TanStack Query, axios, react-hook-form, secure-store, async-storage,
+  lucide-react-native, gesture-handler, reanimated 4 + worklets, expo-location,
+  react-native-maps, expo-font, expo-splash-screen, expo-haptics, plus Jakarta Sans font.
+- Installed dev tooling: ESLint (`eslint-config-expo`, flat config), Prettier,
+  Jest (`jest-expo`, `@testing-library/react-native`, `axios-mock-adapter`).
+- Created the folder structure from MOBILE_PLAN §3 (`src/{api,services,context,
+  theme,navigation,screens,components,hooks,constants,utils,__tests__}`, `scripts/`,
+  `.maestro/`).
+- Created `App.js` boot screen (placeholder, replaced by the themed shell in Phase 2),
+  `app.config.js` (name RideX, slug/scheme `ridex`, auto theme, splash, permissions),
+  `babel.config.js` (worklets plugin), `.env.example`, `.gitignore`, `eslint.config.js`,
+  `.prettierrc.json`, `jest.config.js`, `jest.setup.js`, `AGENTS.md`, `README.md`.
+
+### Verification evidence (all pass)
+
+| Check | Command | Result |
+|---|---|---|
+| Lint | `npm run lint` | ✅ 0 errors |
+| Format | `npm run format:check` | ✅ "All matched files use Prettier code style!" |
+| Unit test | `npm test -- --ci` | ✅ 2/2 (appConfig identity/theme test) |
+| Expo health | `npm run doctor` (`npx expo-doctor`) | ✅ 21/21 checks passed |
+| Android bundle | `npm run bundle-check` (`expo export --platform android`) | ✅ 580 modules, 1.4 MB hbc bundle |
+
+Expo Go visual boot check is the owner's manual step (scan QR from `npm start`).
+
+### Decisions / notes
+
+- `react-test-renderer` pinned to **19.2.3** exactly (the `^19.2.3` range resolves to 19.3.0, which requires React 19.3 and breaks install).
+- Reanimated 4 removed the old `NativeAnimatedHelper` mock; the Phase 1 Jest mock for it was dropped. The Reanimated jest mock will be added in Phase 2 when component tests render animations.
+- `npx expo-doctor` 21/21 passed with no issues.
+- 62 npm audit items are in **transitive/legacy dev tools** (jest 29, glob, eslint 9.39 deprecation) — no fix without breaking the Expo SDK test preset; noted for Phase 13 review.
+
+### Git
+
+- Phase 0 landed on `docs/mobile-api-contract`, merged into `develop` (no-ff).
+- Phase 1 is on `chore/mobile-scaffold` (branched from updated `develop`).
+- ⚠️ Unrelated uncommitted changes existed in the working tree
+  (`backend/src/services/driver.service.js`, `frontend/vite.config.js`,
+  `frontend/src/services/*`) from other work — left untouched and not committed here.
