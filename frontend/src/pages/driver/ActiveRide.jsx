@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowRight, MapPin, Navigation } from 'lucide-react'
-import MapPlaceholder from '../../components/common/MapPlaceholder'
+import RideMap from '../../components/map/RideMap'
 import EmptyState from '../../components/common/EmptyState'
 import { getRideById } from '../../constants/mockData'
 import { formatINR } from '../../utils/format'
+import { placePointFromText } from '../../utils/placePoint'
 import { useToast } from '../../context/toast'
 
 const STEPS = ['accepted', 'driver_arriving', 'driver_arrived', 'started']
@@ -56,6 +57,9 @@ export default function ActiveRide() {
   const ride = getRideById(rideId)
   const [status, setStatus] = useState(ride ? (ride.status === 'requested' ? 'accepted' : ride.status) : 'accepted')
 
+  const pickupPoint = placePointFromText(ride?.pickup)
+  const destinationPoint = placePointFromText(ride?.destination)
+
   if (!ride) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16">
@@ -98,8 +102,8 @@ export default function ActiveRide() {
 
   return (
     <div className="relative">
-      <div className="relative h-[45vh] overflow-hidden border-b border-line bg-map-block lg:h-[calc(100dvh-4rem)]">
-        <MapPlaceholder className="h-full w-full" />
+      <div className="relative isolate h-[45vh] overflow-hidden border-b border-line bg-map-block lg:h-[calc(100dvh-4rem)]">
+        <RideMap pickup={pickupPoint} destination={destinationPoint} />
         <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-paper/70 to-transparent" aria-hidden="true" />
       </div>
 

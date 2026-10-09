@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Check } from 'lucide-react'
 import PageHeader from '../../components/common/PageHeader'
 import { DRIVER_PROFILE } from '../../constants/mockData'
+import { getVehicleImage } from '../../constants/cars'
 import { useToast } from '../../context/toast'
-import carFront from '../../assets/car-front.jpg'
 
 const inputClass =
   'h-[52px] w-full rounded-[14px] bg-surface-soft px-4 text-sm text-ink placeholder:text-muted outline-none transition focus:bg-surface focus:ring-2 focus:ring-ink'
@@ -40,7 +40,11 @@ export default function Vehicle() {
       <form onSubmit={save} className="mt-6 space-y-5">
         <div className="overflow-hidden rounded-3xl border border-line bg-surface">
           <div className="relative h-48 bg-surface-soft sm:h-56">
-            <img src={carFront} alt="Your vehicle" className="h-full w-full object-cover" />
+            <img
+              src={getVehicleImage(form.type)}
+              alt={`${form.brand} ${form.model}`}
+              className="h-full w-full object-cover"
+            />
             <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-surface to-transparent" aria-hidden="true" />
             <span className="absolute bottom-4 left-5 inline-flex items-center rounded-md border-2 border-ink/80 bg-surface px-2.5 py-1 font-mono text-xs font-semibold tracking-[0.18em] text-ink">
               {form.number}

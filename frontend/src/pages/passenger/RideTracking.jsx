@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Phone, Star } from 'lucide-react'
-import MapPlaceholder from '../../components/common/MapPlaceholder'
+import RideMap from '../../components/map/RideMap'
 import Modal from '../../components/common/Modal'
 import EmptyState from '../../components/common/EmptyState'
 import RideTimeline from '../../components/ride/RideTimeline'
 import StatusBadge from '../../components/common/StatusBadge'
-import { getRideById, RIDE_FLOW } from '../../constants/mockData'
+import { DRIVERS, getRideById, RIDE_FLOW } from '../../constants/mockData'
+import { getVehicleImage } from '../../constants/cars'
 import { formatINR } from '../../utils/format'
+import { placePointFromText } from '../../utils/placePoint'
 import { useToast } from '../../context/toast'
 
 const HEADLINES = {
@@ -18,13 +20,6 @@ const HEADLINES = {
   started: ['On the way to your destination', 'ETA 18 min'],
   completed: ["You've arrived", 'Ride completed'],
   cancelled: ['Ride cancelled', 'You were not charged'],
-}
-
-const DRIVER = {
-  name: 'Rahul Dey',
-  rating: 4.8,
-  vehicle: 'Toyota Etios • White',
-  plate: 'KA-01-AB-1234',
 }
 
 export default function RideTracking() {
@@ -46,6 +41,9 @@ export default function RideTracking() {
     return () => clearTimeout(timer)
   }, [status, ride])
 
+  const pickupPoint = placePointFromText(ride?.pickup)
+  const destinationPoint = placePointFromText(ride?.destination)
+
   if (!ride) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16">
@@ -66,6 +64,9 @@ export default function RideTracking() {
     )
   }
 
+  const driverRecord = DRIVERS.find((driver) => driver.name === ride.driver) || DRIVERS[0]
+  const carImage = getVehicleImage(driverRecord.vehicle.type)
+
   const [headline, subline] = HEADLINES[status] || HEADLINES.requested
   const showDriver = ['accepted', 'driver_arriving', 'driver_arrived', 'started', 'completed'].includes(status)
   const canCancel = ['requested', 'accepted'].includes(status)
@@ -78,11 +79,8 @@ export default function RideTracking() {
 
   return (
     <div className="relative">
-      <div className="relative h-[45vh] overflow-hidden border-b border-line bg-map-block lg:h-[62vh]">
-        <MapPlaceholder className="h-full w-full" />
-        {status === 'requested' && (
-          <span className="absolute left-[8%] top-[72%] h-10 w-10 animate-ping rounded-full bg-ink/20" aria-hidden="true" />
-        )}
+      <div className="relative isolate h-[45vh] overflow-hidden border-b border-line bg-map-block lg:h-[62vh]">
+        <RideMap pickup={pickupPoint} destination={destinationPoint} />
         <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-paper/70 to-transparent" aria-hidden="true" />
       </div>
 
@@ -126,32 +124,47 @@ export default function RideTracking() {
               </div>
 
               {showDriver && (
-                <div className="mt-6 rounded-2xl border border-line bg-surface p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-soft text-sm font-medium text-ink">
-                        RD
-                      </span>
-                      <div>
-                        <p className="text-sm font-medium text-ink">{DRIVER.name}</p>
-                        <p className="flex items-center gap-1 text-[13px] text-muted">
-                          <Star className="h-3.5 w-3.5 fill-ink text-ink" aria-hidden="true" />
-                          {DRIVER.rating} • {DRIVER.vehicle}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => toast('Calling Rahul Dey...')}
-                      className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm text-ink-soft transition hover:bg-surface-soft"
-                    >
-                      <Phone className="h-4 w-4" aria-hidden="true" />
-                      Call
-                    </button>
+                <div className="mt-6 overflow-hidden rounded-2xl border border-line bg-surface">
+                  <div className="relative h-40 w-full bg-surface-soft">
+                    <img
+                      src={carImage}
+                      alt={`${driverRecord.vehicle.brand} ${driverRecord.vehicle.model}`}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                    <span className="absolute bottom-3 left-3 inline-flex items-center rounded-md border-2 border-ink/80 bg-surface px-2.5 py-1 font-mono text-xs font-semibold tracking-[0.18em] text-ink">
+                      {driverRecord.vehicle.number}
+                    </span>
                   </div>
-                  <span className="mt-3 inline-flex items-center rounded-md border-2 border-ink/80 px-2.5 py-1 font-mono text-xs font-semibold tracking-[0.18em] text-ink">
-                    {DRIVER.plate}
-                  </span>
+                  <div className="p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-soft text-sm font-medium text-ink">
+                          {driverRecord.name
+                            .split(' ')
+                            .map((part) => part[0])
+                            .join('')}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-ink">{driverRecord.name}</p>
+                          <p className="flex items-center gap-1 truncate text-[13px] text-muted">
+                            <Star className="h-3.5 w-3.5 shrink-0 fill-ink text-ink" aria-hidden="true" />
+                            <span className="truncate">
+                              {driverRecord.rating} • {driverRecord.vehicle.brand} {driverRecord.vehicle.model} • {driverRecord.vehicle.color}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => toast(`Calling ${driverRecord.name}...`)}
+                        className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-line px-4 text-sm text-ink-soft transition hover:bg-surface-soft"
+                      >
+                        <Phone className="h-4 w-4" aria-hidden="true" />
+                        Call
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 

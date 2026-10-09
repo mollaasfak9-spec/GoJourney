@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, ChevronDown, Loader2, MapPin, Navigation, TriangleAlert } from 'lucide-react'
-import MapPlaceholder from '../../components/common/MapPlaceholder'
+import RideMap from '../../components/map/RideMap'
 import PlaceInput from '../../components/ride/PlaceInput'
 import VehicleSelector from '../../components/ride/VehicleSelector'
 import { SAVED_PLACES } from '../../constants/mockData'
@@ -9,7 +9,11 @@ import { PLACES } from '../../constants/places'
 import { PARCEL_TYPES } from '../../constants/services'
 import { BOOKING_VEHICLES, estimateDistanceKm, fareFromDistance, routeDistanceKm } from '../../utils/fare'
 import { formatINR } from '../../utils/format'
+import { resolvePlacePoint } from '../../utils/placePoint'
 import { useToast } from '../../context/toast'
+
+const DEFAULT_PICKUP_POINT = { lat: SAVED_PLACES[0].lat, lng: SAVED_PLACES[0].lng, label: SAVED_PLACES[0].label }
+const DEFAULT_DESTINATION_POINT = { lat: SAVED_PLACES[1].lat, lng: SAVED_PLACES[1].lng, label: SAVED_PLACES[1].label }
 
 export default function BookRide() {
   const navigate = useNavigate()
@@ -43,6 +47,15 @@ export default function BookRide() {
   }, [distance, hasRoute])
   const fare = fares[vehicle]
   const ParcelIcon = parcelType.icon
+
+  const pickupPoint = useMemo(() => {
+    const point = resolvePlacePoint(pickupPlace, pickup)
+    return point ? { ...point, label: point.name } : DEFAULT_PICKUP_POINT
+  }, [pickupPlace, pickup])
+  const destinationPoint = useMemo(() => {
+    const point = resolvePlacePoint(destinationPlace, destination)
+    return point ? { ...point, label: point.name } : DEFAULT_DESTINATION_POINT
+  }, [destinationPlace, destination])
 
   function handlePickupChange(text) {
     setPickup(text)
@@ -96,25 +109,8 @@ export default function BookRide() {
 
   return (
     <div className="relative">
-      <div className="relative h-[45vh] w-full overflow-hidden border-b border-line bg-map-block lg:h-[calc(100dvh-4rem)]">
-        <MapPlaceholder className="h-full w-full" />
-        {hasRoute && (
-          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 800 600" preserveAspectRatio="none" aria-hidden="true">
-            <path
-              d="M120 480 L340 380 L340 260 L560 220"
-              fill="none"
-              stroke="rgb(var(--color-map-route))"
-              strokeWidth="7"
-              strokeLinecap="round"
-              strokeDasharray="1000"
-              strokeDashoffset="1000"
-              className="animate-[dash_900ms_ease-out_forwards]"
-            />
-          </svg>
-        )}
-        {!hasRoute && (
-          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-paper/80 to-transparent" aria-hidden="true" />
-        )}
+      <div className="relative isolate h-[45vh] w-full overflow-hidden border-b border-line bg-map-block lg:h-[calc(100dvh-4rem)]">
+        <RideMap pickup={pickupPoint} destination={destinationPoint} />
       </div>
 
       <div className="relative z-10 -mt-8 px-4 pb-10 sm:px-6 lg:absolute lg:left-6 lg:top-6 lg:mt-0 lg:w-[400px] lg:px-0">

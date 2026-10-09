@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { ArrowRight, Menu, X } from 'lucide-react'
+import { Link, NavLink } from 'react-router-dom'
+import { Menu, X } from 'lucide-react'
+import { useState } from 'react'
 import ThemeToggle from '../common/ThemeToggle'
 
 const navLinks = [
@@ -44,28 +44,21 @@ export default function PublicNavbar() {
             <Link to="/" className="text-[22px] font-medium tracking-tight text-ink" aria-label="RideX home">
               RideX
             </Link>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => {
-              const active = isActive(link.to)
-              return (
-                <Link
+            <nav className="hidden md:flex items-center gap-6 text-sm">
+              {navLinks.map((link) => (
+                <NavLink
                   key={link.to}
                   to={link.to}
-                  aria-current={active ? 'page' : undefined}
-                  className={`relative py-1 text-[15px] transition-colors ${
-                    active ? 'text-ink' : 'text-muted-strong hover:text-ink'
-                  }`}
+                  end={link.to === '/'}
+                  className={({ isActive }) =>
+                    `whitespace-nowrap transition-colors ${isActive ? 'font-medium text-ink' : 'text-muted-strong hover:text-ink'}`
+                  }
                 >
                   {link.label}
-                  {active && (
-                    <span className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-ink" aria-hidden="true" />
-                  )}
-                </Link>
-              )
-            })}
-          </nav>
+                </NavLink>
+              ))}
+            </nav>
+          </div>
 
           <div className="hidden md:flex flex-1 items-center justify-end gap-3">
             <ThemeToggle />
@@ -99,40 +92,22 @@ export default function PublicNavbar() {
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-ink/35 backdrop-blur-sm" onClick={() => setOpen(false)} aria-hidden="true" />
-          <div className="absolute inset-0 flex flex-col bg-surface px-6 pb-8 pt-4" role="dialog" aria-modal="true" aria-label="Navigation">
-            <div className="flex h-[72px] items-center justify-between">
-              <Link to="/" className="text-[22px] font-medium tracking-tight text-ink" onClick={() => setOpen(false)}>
-                RideX
-              </Link>
-              <button
-                type="button"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line bg-surface text-ink-soft"
-                onClick={() => setOpen(false)}
-                aria-label="Close navigation"
-              >
-                <X className="h-5 w-5" aria-hidden="true" />
-              </button>
-            </div>
-
-            <nav className="mt-8 flex flex-col gap-5">
-              {navLinks.map((link) => {
-                const active = isActive(link.to)
-                return (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    onClick={() => setOpen(false)}
-                    aria-current={active ? 'page' : undefined}
-                    className={`text-[28px] font-medium tracking-tight transition-colors ${
-                      active ? 'text-ink' : 'text-muted-strong hover:text-ink'
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                )
-              })}
+        <div className="md:hidden max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-t border-line bg-surface">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-4">
+            <nav className="flex flex-col gap-2 text-sm">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.to === '/'}
+                  className={({ isActive }) =>
+                    `whitespace-nowrap py-2 transition-colors ${isActive ? 'font-medium text-ink' : 'text-muted-strong hover:text-ink'}`
+                  }
+                  onClick={() => setOpen(false)}
+                >
+                  {link.label}
+                </NavLink>
+              ))}
             </nav>
 
             <div className="mt-auto flex flex-col gap-3">
