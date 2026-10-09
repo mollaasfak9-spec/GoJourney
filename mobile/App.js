@@ -1,43 +1,50 @@
+import { useFonts } from '@expo-google-fonts/plus-jakarta-sans';
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from '@expo-google-fonts/plus-jakarta-sans';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-// Phase 1 boot screen. It only proves the build boots in Expo Go.
-// Phase 2 replaces this with the real themed app shell and `src/theme/` tokens.
-const BOOT_BACKGROUND = '#0A0D12';
-const BOOT_TEXT = '#FFFFFF';
-const BOOT_ACCENT = '#22E55B';
+import { ToastProvider } from './src/components/ui/Toast';
+import { ThemeProvider } from './src/context/ThemeContext';
+import { BootScreen } from './src/screens/BootScreen';
+import { ComponentGallery } from './src/screens/dev/ComponentGallery';
+
+// Keep the native splash up until the fonts finish loading.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
-        RideX<Text style={styles.dot}>.</Text>
-      </Text>
-      <Text style={styles.subtitle}>Phase 1 scaffold is running</Text>
-      <StatusBar style="light" />
-    </View>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <StatusBar style="auto" />
+          {/* The component gallery is dev-only; navigation arrives in Phase 3. */}
+          {__DEV__ ? <ComponentGallery /> : <BootScreen />}
+        </ToastProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: BOOT_BACKGROUND,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    color: BOOT_TEXT,
-    fontSize: 36,
-    fontWeight: '700',
-    letterSpacing: -0.8,
-  },
-  dot: {
-    color: BOOT_ACCENT,
-  },
-  subtitle: {
-    marginTop: 8,
-    color: '#A3ACB9',
-    fontSize: 14,
-  },
-});
