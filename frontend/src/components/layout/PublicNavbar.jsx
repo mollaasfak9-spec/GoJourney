@@ -1,6 +1,6 @@
 import { Link, NavLink } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { Menu, ArrowRight } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import ThemeToggle from '../common/ThemeToggle'
 
 const navLinks = [
@@ -12,7 +12,6 @@ const navLinks = [
 export default function PublicNavbar() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const { pathname } = useLocation()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -27,8 +26,6 @@ export default function PublicNavbar() {
       document.body.style.overflow = ''
     }
   }, [open])
-
-  const isActive = (to) => (to === '/' ? pathname === '/' : pathname.startsWith(to))
 
   return (
     <header className={`sticky top-0 z-40 w-full transition-[padding] duration-300 ${scrolled ? 'pt-4' : 'pt-0'}`}>

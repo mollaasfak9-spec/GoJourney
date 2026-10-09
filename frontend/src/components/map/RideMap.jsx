@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet'
+import { MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useTheme } from '../../hooks/useTheme'
@@ -15,6 +15,9 @@ const TILE_ATTRIBUTION =
 const PIN_SVG =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5a7.5 7.5 0 0 0-7.5 7.5c0 5.5 7.5 13.5 7.5 13.5s7.5-8 7.5-13.5A7.5 7.5 0 0 0 12 1.5Z"/><circle cx="12" cy="9" r="3.1"/></svg>'
 
+const USER_DOT_SVG =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="ridex-user-ring" cx="12" cy="12" r="11"/><circle class="ridex-user-dot" cx="12" cy="12" r="4.5"/></svg>'
+
 function createPinIcon(variant) {
   return L.divIcon({
     className: `ridex-marker ridex-marker--${variant}`,
@@ -27,6 +30,27 @@ function createPinIcon(variant) {
 
 const PICKUP_ICON = createPinIcon('pickup')
 const DROP_ICON = createPinIcon('drop')
+const DRIVER_ICON = createPinIcon('driver')
+
+const USER_ICON = L.divIcon({
+  className: 'ridex-user-marker',
+  html: USER_DOT_SVG,
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+})
+
+// Normalizes either [lat, lng] pairs or { lat, lng } objects to [lat, lng].
+function toLatLng(point) {
+  if (!point) return null
+  if (Array.isArray(point) && point.length >= 2) {
+    const lat = Number(point[0])
+    const lng = Number(point[1])
+    return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null
+  }
+  const lat = Number(point.lat)
+  const lng = Number(point.lng)
+  return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null
+}
 
 function MapEffects({ points }) {
   const map = useMap()
@@ -46,39 +70,62 @@ function MapEffects({ points }) {
   useEffect(() => {
     if (points.length === 0) return
     if (points.length === 1) {
-      map.setView([points[0].lat, points[0].lng], 14, { animate: true })
+      map.setView(points[0], 14, { animate: true })
       return
     }
-    map.fitBounds(
-      L.latLngBounds(points.map((point) => [point.lat, point.lng])),
-      { padding: [64, 64], maxZoom: 15, animate: true },
-    )
+    map.fitBounds(L.latLngBounds(points), { padding: [64, 64], maxZoom: 15, animate: true })
   }, [map, points])
 
   return null
 }
 
-export default function RideMap({ pickup = null, destination = null, className = '' }) {
+function MapClickHandler({ onMapClick }) {
+  useMapEvents({
+    click(event) {
+      onMapClick?.({ lat: event.latlng.lat, lng: event.latlng.lng })
+    },
+  })
+  return null
+}
+
+export default function RideMap({
+  pickup = null,
+  destination = null,
+  route = null,
+  routeApproximate = false,
+  driver = null,
+  userLocation = null,
+  onMapClick,
+  className = '',
+}) {
   const { isDark } = useTheme()
 
-  const pickupLat = pickup?.lat
-  const pickupLng = pickup?.lng
-  const destinationLat = destination?.lat
-  const destinationLng = destination?.lng
+  const pickupPosition = useMemo(() => toLatLng(pickup), [pickup])
+  const destinationPosition = useMemo(() => toLatLng(destination), [destination])
+  const driverPosition = useMemo(() => toLatLng(driver), [driver])
+  const userPosition = useMemo(() => toLatLng(userLocation), [userLocation])
 
-  const points = useMemo(() => {
-    const list = []
-    if (Number.isFinite(pickupLat) && Number.isFinite(pickupLng)) list.push({ lat: pickupLat, lng: pickupLng })
-    if (Number.isFinite(destinationLat) && Number.isFinite(destinationLng)) {
-      list.push({ lat: destinationLat, lng: destinationLng })
+  const routePositions = useMemo(() => {
+    if (Array.isArray(route) && route.length >= 2) {
+      return route.map(toLatLng).filter(Boolean)
     }
-    return list
-  }, [pickupLat, pickupLng, destinationLat, destinationLng])
+    return []
+  }, [route])
 
-  const routePositions = useMemo(
-    () => points.map((point) => [point.lat, point.lng]),
-    [points],
-  )
+  // Focus the view on every point we have so nothing important is cropped.
+  const fitPoints = useMemo(() => {
+    const list = []
+    if (pickupPosition) list.push(pickupPosition)
+    if (destinationPosition) list.push(destinationPosition)
+    if (routePositions.length) list.push(...routePositions)
+    if (driverPosition) list.push(driverPosition)
+    if (userPosition) list.push(userPosition)
+    return list
+  }, [pickupPosition, destinationPosition, routePositions, driverPosition, userPosition])
+
+  const hasRoadRoute = routePositions.length >= 2
+  const straightLine =
+    !hasRoadRoute && pickupPosition && destinationPosition ? [pickupPosition, destinationPosition] : []
 
   const routeColor = isDark ? '#fafaf9' : '#000000'
   const casingColor = isDark ? '#1c1c1c' : '#ffffff'
@@ -86,49 +133,69 @@ export default function RideMap({ pickup = null, destination = null, className =
   return (
     <div className={`ridex-map relative h-full w-full ${className}`}>
       <MapContainer
-        center={points[0] ? [points[0].lat, points[0].lng] : KOLKATA_CENTER}
+        center={pickupPosition || KOLKATA_CENTER}
         zoom={DEFAULT_ZOOM}
         zoomControl={false}
         scrollWheelZoom
         className="h-full w-full"
       >
-        <TileLayer
-          url={TILE_URL}
-          attribution={TILE_ATTRIBUTION}
-          subdomains="abc"
-          maxZoom={20}
-        />
+        <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} subdomains="abc" maxZoom={20} />
 
-        {points.length === 2 && (
+        {(hasRoadRoute || straightLine.length === 2) && (
           <>
             <Polyline
-              positions={routePositions}
-              pathOptions={{ color: casingColor, weight: 9, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }}
+              positions={hasRoadRoute ? routePositions : straightLine}
+              pathOptions={{
+                color: casingColor,
+                weight: 9,
+                opacity: 0.9,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
             />
             <Polyline
-              positions={routePositions}
-              pathOptions={{ color: routeColor, weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round' }}
+              positions={hasRoadRoute ? routePositions : straightLine}
+              pathOptions={{
+                color: routeColor,
+                weight: 5,
+                opacity: 1,
+                lineCap: 'round',
+                lineJoin: 'round',
+                dashArray: hasRoadRoute && routeApproximate ? '8 10' : undefined,
+              }}
             />
           </>
         )}
 
-        {points[0] && (
-          <Marker position={[points[0].lat, points[0].lng]} icon={PICKUP_ICON} keyboard={false}>
+        {pickupPosition && (
+          <Marker position={pickupPosition} icon={PICKUP_ICON} keyboard={false}>
             <Tooltip permanent direction="top" className="ridex-tooltip" opacity={1}>
               {pickup?.label || 'Pickup'}
             </Tooltip>
           </Marker>
         )}
 
-        {points[1] && (
-          <Marker position={[points[1].lat, points[1].lng]} icon={DROP_ICON} keyboard={false}>
+        {destinationPosition && (
+          <Marker position={destinationPosition} icon={DROP_ICON} keyboard={false}>
             <Tooltip permanent direction="top" className="ridex-tooltip" opacity={1}>
               {destination?.label || 'Drop-off'}
             </Tooltip>
           </Marker>
         )}
 
-        <MapEffects points={points} />
+        {driverPosition && (
+          <Marker position={driverPosition} icon={DRIVER_ICON} keyboard={false}>
+            <Tooltip direction="top" className="ridex-tooltip" opacity={1}>
+              {driver?.label || 'Your driver'}
+            </Tooltip>
+          </Marker>
+        )}
+
+        {userPosition && <Marker position={userPosition} icon={USER_ICON} keyboard={false} />}
+
+        {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
+
+        <MapEffects points={fitPoints} />
       </MapContainer>
     </div>
   )

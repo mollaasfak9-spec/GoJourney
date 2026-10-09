@@ -15,6 +15,7 @@ const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const driverRoutes = require("./routes/driver.routes");
 const rideRoutes = require("./routes/ride.routes");
+const mapsRoutes = require("./routes/maps.routes");
 const paymentRoutes = require("./routes/payment.routes");
 const adminRoutes = require("./routes/admin.routes");
 
@@ -102,6 +103,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/drivers", driverRoutes);
 
 app.use("/api/rides", rideRoutes);
+
+app.use("/api/maps", mapsRoutes);
 
 app.use("/api/payments", paymentRoutes);
 

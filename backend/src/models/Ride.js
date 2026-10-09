@@ -83,6 +83,21 @@ const rideSchema = new mongoose.Schema(
             min: 0
         },
 
+        // Real road route geometry as [lat, lng] pairs, so Rider/Driver tracking
+        // can redraw the exact route after a reload. Empty for legacy records.
+        routeGeometry: {
+            type: [[Number]],
+            default: []
+        },
+
+        // Where the distance/course came from: "osrm" (real road route) or
+        // "approximate" (straight-line fallback when routing was unavailable).
+        routeSource: {
+            type: String,
+            enum: ["osrm", "approximate", null],
+            default: null
+        },
+
         estimatedFare: {
             type: Number,
             required: true,

@@ -1,6 +1,7 @@
 const ApiError = require("../utils/ApiError");
 const { estimateRoute } = require("../utils/geo");
 const { FARE_TABLE } = require("../utils/constants");
+const mapsService = require("./maps.service");
 
 /**
  * Fare calculation (BACKEND_PLAN.md section 17).
@@ -42,11 +43,25 @@ const calculateFare = ({ vehicleType, distance, duration }) => {
 };
 
 /**
- * Full estimate for POST /api/rides/fare-estimate.
- * Returns exactly the shape documented in BACKEND_PLAN.md section 18.
+ * Full estimate. When a route result is supplied (from OSRM via the maps
+ * service) its road distance and travel time are used; otherwise it falls back
+ * to the great-circle estimate so the endpoint still works offline.
+ *
+ * Returns exactly the shape documented in BACKEND_PLAN.md section 18, plus a
+ * `route` block the frontend uses to draw the road route on the map.
  */
-const estimateFare = ({ pickup, destination, vehicleType }) => {
-    const { distance, duration } = estimateRoute(pickup, destination);
+const estimateFare = ({ pickup, destination, vehicleType, route = null }) => {
+    let distance;
+    let duration;
+
+    if (route) {
+        distance = route.distanceKm;
+        duration = route.durationMin;
+    } else {
+        const estimate = estimateRoute(pickup, destination);
+        distance = estimate.distance;
+        duration = estimate.duration;
+    }
 
     const rates = getRateFor(vehicleType);
 
@@ -59,8 +74,30 @@ const estimateFare = ({ pickup, destination, vehicleType }) => {
             baseFare: rates.baseFare,
             distanceCharge: Math.round(distance * rates.perKmRate),
             timeCharge: Math.round(duration * rates.perMinuteRate)
-        }
+        },
+        route: route
+            ? {
+                  geometry: route.geometry,
+                  source: route.source,
+                  approximate: Boolean(route.approximate)
+              }
+            : {
+                  geometry: null,
+                  source: "approximate",
+                  approximate: true
+              }
     };
+};
+
+/**
+ * Route-aware estimate: asks the maps service for a real road route first, then
+ * prices it. This is what the controllers use so distance, ETA and fare all come
+ * from the same trusted result.
+ */
+const estimateFareWithRoute = async ({ pickup, destination, vehicleType }) => {
+    const route = await mapsService.route({ origin: pickup, destination });
+
+    return estimateFare({ pickup, destination, vehicleType, route });
 };
 
 /**
@@ -77,6 +114,7 @@ module.exports = {
     getRateFor,
     calculateFare,
     estimateFare,
+    estimateFareWithRoute,
     calculateFinalFare,
     FARE_TABLE
 };

@@ -1,0 +1,77 @@
+{
+  "payments": [],
+  "products": [],
+  "users": [
+    {
+      "_id": "6ac6345fc587b5090ab5ca13",
+      "name": "Eee Test",
+      "email": "e2e415815564@example.com",
+      "password": "$2b$12$hkVztuvOwywGUFkeEPc8OuGcci6bYBQQPbWoqSAVpa4vA4aGRMgca",
+      "avatar": "",
+      "role": "user",
+      "isActive": true,
+      "lastLogin": "2026-10-07T12:00:34.107Z",
+      "createdAt": "2026-10-07T12:00:31.080Z",
+      "updatedAt": "2026-10-07T12:00:34.110Z",
+      "__v": 0
+    },
+    {
+      "_id": "6ac634b1fc3fc12fcfd52b6e",
+      "name": "Eee Test",
+      "email": "e2e978358213@example.com",
+      "password": "$2b$12$8/4dTGpRoI4hFBeLyK8UOO0xW.tnBDtAe4mpugcaQ0C/0AuVFVaxq",
+      "avatar": "",
+      "role": "user",
+      "isActive": true,
+      "lastLogin": null,
+      "createdAt": "2026-10-07T12:01:53.572Z",
+      "updatedAt": "2026-10-07T12:01:53.572Z",
+      "__v": 0
+    },
+    {
+      "_id": "6ac744cc1fe810efc199b1ee",
+      "name": "Test User",
+      "email": "testuser1361470269@example.com",
+      "password": "$2b$12$PxdQU5rvGe/kATE6BzqTCORvjVuhbWuAb/tNrtswIGd0spsos2qoC",
+      "avatar": "",
+      "role": "user",
+      "isActive": true,
+      "lastLogin": "2026-10-08T07:23:04.052Z",
+      "createdAt": "2026-10-08T07:22:52.125Z",
+      "updatedAt": "2026-10-08T07:23:04.052Z",
+      "__v": 0
+    },
+    {
+      "_id": "6ac74c99b8652d3e7737c39b",
+      "name": "Asfak ulla Molla",
+      "email": "mollaasfak9@gmail.com",
+      "password": "78cdfbc0c209263125b6cec39fef7cca:23caea7f9ca628dd568a687057cc598cfa900a74266817c13a3c75ec88726ccd1af8a665d533ad3a2ebc71f0d696cb2a3a7fc51becda6bf3ac2a19badd243c6d",
+      "role": "rider",
+      "createdAt": "2026-10-08T07:56:09.016Z",
+      "updatedAt": "2026-10-08T07:56:09.016Z",
+      "__v": 0
+    }
+  ],
+  "vehicles": [],
+  "drivers": [],
+  "tasks": [
+    {
+      "_id": "6ac634b3fc3fc12fcfd52b6f",
+      "user": "6ac634b1fc3fc12fcfd52b6e",
+      "title": "My first task",
+      "description": "Testing",
+      "status": "pending",
+      "priority": "high",
+      "category": "work",
+      "dueDate": null,
+      "completedAt": null,
+      "tags": [],
+      "isArchived": false,
+      "createdAt": "2026-10-07T12:01:55.668Z",
+      "updatedAt": "2026-10-07T12:01:55.668Z",
+      "__v": 0
+    }
+  ],
+  "rides": [],
+  "ratings": []
+}

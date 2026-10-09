@@ -9,7 +9,7 @@ const inputClass =
   'h-[52px] w-full rounded-[14px] bg-surface-soft px-4 text-sm text-ink placeholder:text-muted outline-none transition focus:bg-surface focus:ring-2 focus:ring-ink'
 
 const DEMO_ACCOUNTS = [
-  { label: 'Passenger', email: 'akash@example.com' },
+  { label: 'Passenger', email: 'passenger@ridex.com' },
   { label: 'Driver', email: 'driver@ridex.com' },
   { label: 'Admin', email: 'admin@ridex.com' },
 ]

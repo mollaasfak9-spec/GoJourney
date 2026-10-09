@@ -40,8 +40,18 @@ const authRateLimiter = createRateLimiter({
     code: "AUTH_RATE_LIMIT_EXCEEDED"
 });
 
+// Public geocoding / routing providers (Nominatim, OSRM) have usage policies,
+// so the backend proxy enforces its own ceiling on top of client side debounce.
+const externalRateLimiter = createRateLimiter({
+    windowMs: env.RATE_LIMIT_WINDOW_MS,
+    max: 150,
+    message: "Too many map/address requests, please slow down and try again shortly",
+    code: "MAPS_RATE_LIMIT_EXCEEDED"
+});
+
 module.exports = {
     apiRateLimiter,
     authRateLimiter,
+    externalRateLimiter,
     createRateLimiter
 };

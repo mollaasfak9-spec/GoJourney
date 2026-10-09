@@ -13,6 +13,7 @@ const { ROLES, RIDE_STATUS, PAYMENT_METHOD, PAYMENT_STATUS } = require("../utils
 const fareService = require("../services/fare.service");
 const rideService = require("../services/ride.service");
 const driverService = require("../services/driver.service");
+const mapsService = require("../services/maps.service");
 
 /**
  * Loads a ride and makes sure the caller is allowed to see it
@@ -70,20 +71,16 @@ const loadAssignedRideForDriver = async (rideId, user) => {
 const getFareEstimate = asyncHandler(async (req, res) => {
     const { pickup, destination, vehicleType } = req.body;
 
-    if (
-        pickup.lat === destination.lat &&
-        pickup.lng === destination.lng
-    ) {
-        throw ApiError.badRequest(
-            "Pickup and destination cannot be the same point",
-            "SAME_PICKUP_AND_DESTINATION"
-        );
-    }
+    mapsService.assertDistinctPoints(pickup, destination);
 
-    const estimate = fareService.estimateFare({ pickup, destination, vehicleType });
+    // Distance, duration and route geometry all come from the maps service so
+    // the price is derived from a real road route whenever one is available.
+    const estimate = await fareService.estimateFareWithRoute({ pickup, destination, vehicleType });
 
     return success(res, {
-        message: "Fare estimated successfully",
+        message: estimate.route.approximate
+            ? "Estimated fare (approximate distance, live routing unavailable)"
+            : "Fare estimated successfully",
         data: estimate
     });
 });
@@ -95,12 +92,8 @@ const getFareEstimate = asyncHandler(async (req, res) => {
 const createRide = asyncHandler(async (req, res) => {
     const { pickup, destination, vehicleType } = req.body;
 
-    if (pickup.lat === destination.lat && pickup.lng === destination.lng) {
-        throw ApiError.badRequest(
-            "Pickup and destination cannot be the same point",
-            "SAME_PICKUP_AND_DESTINATION"
-        );
-    }
+    // Reject identical / effectively identical points before doing any work.
+    mapsService.assertDistinctPoints(pickup, destination);
 
     // One ride per passenger at a time keeps the dispatch state predictable
     const existingRide = await Ride.findOne({
@@ -123,7 +116,8 @@ const createRide = asyncHandler(async (req, res) => {
         );
     }
 
-    const estimate = fareService.estimateFare({ pickup, destination, vehicleType });
+    // The server prices the ride itself; a fare sent by the client is ignored.
+    const estimate = await fareService.estimateFareWithRoute({ pickup, destination, vehicleType });
 
     // MVP matching (section 43): nearest verified online driver with that vehicle
     const nearestDriver = await driverService.findNearestAvailableDriver({
@@ -143,6 +137,8 @@ const createRide = asyncHandler(async (req, res) => {
         distance: estimate.estimatedDistance,
         estimatedDuration: estimate.estimatedDuration,
         estimatedFare: estimate.estimatedFare,
+        routeGeometry: estimate.route.geometry || [],
+        routeSource: estimate.route.source || null,
         status: RIDE_STATUS.REQUESTED
     });
 

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   Building2,
   GraduationCap,
@@ -31,7 +31,7 @@ const CATEGORY_ICONS = {
   neighborhood: MapPin,
 }
 
-function buildItems(query, places, saved) {
+function buildItems(query, places, saved, remote = []) {
   const trimmed = query.trim().toLowerCase()
 
   const savedItems = saved
@@ -63,7 +63,29 @@ function buildItems(query, places, saved) {
     place,
   }))
 
-  return [...savedItems, ...placeItems]
+  // Backend geocoder results are appended after the curated local matches.
+  const localNames = new Set(placeItems.map((item) => item.title.toLowerCase()))
+  const remoteItems = remote
+    .filter((place) => !localNames.has((place.name || '').toLowerCase()))
+    .map((place) => ({
+      key: `remote-${place.id}`,
+      group: 'Search results',
+      title: place.name,
+      subtitle: place.address,
+      category: place.category || 'neighborhood',
+      place: {
+        id: place.id,
+        name: place.name,
+        address: place.address,
+        area: place.address,
+        category: place.category || 'neighborhood',
+        lat: place.lat,
+        lng: place.lng,
+        keywords: [],
+      },
+    }))
+
+  return [...savedItems, ...placeItems, ...remoteItems]
 }
 
 export default function PlaceInput({
@@ -76,15 +98,52 @@ export default function PlaceInput({
   iconClassName = 'text-ink',
   places = [],
   saved = [],
+  search,
+  minChars = 3,
 }) {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
+  const [remote, setRemote] = useState({ query: '', results: [] })
   const boxRef = useRef(null)
   const listId = useId()
 
-  const items = buildItems(value, places, saved)
   const query = value.trim()
-  const showList = open && (items.length > 0 || query.length > 0)
+
+  // Debounced backend geocoding, merged with the curated local places. Results
+  // are stored alongside the query they belong to so stale responses are
+  // ignored without needing to reset state from inside the effect.
+  useEffect(() => {
+    if (!search || !open || query.length < minChars) return undefined
+
+    let cancelled = false
+
+    const timer = setTimeout(() => {
+      Promise.resolve(search(query))
+        .then((results) => {
+          if (!cancelled) setRemote({ query, results: Array.isArray(results) ? results : [] })
+        })
+        .catch(() => {
+          if (!cancelled) setRemote({ query, results: [] })
+        })
+    }, 600)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [search, open, query, minChars])
+
+  const remoteResults = useMemo(
+    () => (remote.query === query ? remote.results : []),
+    [remote, query],
+  )
+  const loading = Boolean(search) && open && query.length >= minChars && remote.query !== query
+
+  const items = useMemo(
+    () => buildItems(value, places, saved, remoteResults),
+    [value, places, saved, remoteResults],
+  )
+  const showList = open && (items.length > 0 || query.length > 0 || loading)
 
   useEffect(() => {
     if (!open) return undefined
@@ -194,9 +253,14 @@ export default function PlaceInput({
               </li>
             )
           })}
-          {items.length === 0 && (
+          {items.length === 0 && !loading && (
             <li role="presentation" className="px-3 py-3 text-sm text-muted">
               No places match &ldquo;{query}&rdquo;
+            </li>
+          )}
+          {loading && (
+            <li role="presentation" className="px-3 py-3 text-sm text-muted">
+              Searching addresses...
             </li>
           )}
         </ul>
