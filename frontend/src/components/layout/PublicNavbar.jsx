@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import ThemeToggle from '../common/ThemeToggle'
@@ -23,9 +23,16 @@ export default function PublicNavbar() {
             </Link>
             <nav className="hidden md:flex items-center gap-6 text-sm">
               {navLinks.map((link) => (
-                <Link key={link.to} to={link.to} className="text-muted-strong hover:text-ink transition-colors">
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.to === '/'}
+                  className={({ isActive }) =>
+                    `whitespace-nowrap transition-colors ${isActive ? 'font-medium text-ink' : 'text-muted-strong hover:text-ink'}`
+                  }
+                >
                   {link.label}
-                </Link>
+                </NavLink>
               ))}
             </nav>
           </div>
@@ -50,13 +57,21 @@ export default function PublicNavbar() {
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-line bg-surface">
+        <div className="md:hidden max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-t border-line bg-surface">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-4">
             <nav className="flex flex-col gap-2 text-sm">
               {navLinks.map((link) => (
-                <Link key={link.to} to={link.to} className="py-2 text-muted-strong hover:text-ink" onClick={() => setOpen(false)}>
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.to === '/'}
+                  className={({ isActive }) =>
+                    `whitespace-nowrap py-2 transition-colors ${isActive ? 'font-medium text-ink' : 'text-muted-strong hover:text-ink'}`
+                  }
+                  onClick={() => setOpen(false)}
+                >
                   {link.label}
-                </Link>
+                </NavLink>
               ))}
             </nav>
             <div className="flex flex-col gap-2">

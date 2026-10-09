@@ -1,15 +1,19 @@
 import { Link, useParams } from 'react-router-dom'
 import { ChevronRight, Phone, Star } from 'lucide-react'
-import MapPlaceholder from '../../components/common/MapPlaceholder'
+import RideMap from '../../components/map/RideMap'
 import StatusBadge from '../../components/common/StatusBadge'
 import EmptyState from '../../components/common/EmptyState'
 import RideTimeline from '../../components/ride/RideTimeline'
 import { getRideById } from '../../constants/mockData'
 import { formatDate, formatINR, formatTime } from '../../utils/format'
+import { placePointFromText } from '../../utils/placePoint'
 
 export default function RideDetails() {
   const { id } = useParams()
   const ride = getRideById(id)
+
+  const pickupPoint = placePointFromText(ride?.pickup)
+  const destinationPoint = placePointFromText(ride?.destination)
 
   if (!ride) {
     return (
@@ -54,8 +58,8 @@ export default function RideDetails() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <div className="relative h-64 overflow-hidden rounded-3xl border border-line bg-map-block sm:h-80">
-            <MapPlaceholder className="h-full w-full" />
+          <div className="relative isolate h-64 overflow-hidden rounded-3xl border border-line bg-map-block sm:h-80">
+            <RideMap pickup={pickupPoint} destination={destinationPoint} />
           </div>
 
           <div className="mt-5 rounded-2xl border border-line bg-surface p-5">
