@@ -115,6 +115,7 @@ const findAvailableRideRequests = async ({ driver, vehicleTypes, radiusKm }) => 
         vehicleType: { $in: vehicleTypes },
         rejectedBy: { $ne: driver._id }
     })
+        .populate({ path: "passengerId", select: "name phone profileImage" })
         .sort({ createdAt: 1 })
         .lean();
 
